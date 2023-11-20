@@ -43,8 +43,93 @@ Both class of methods rely on the solution of a local problem, which is an optim
 - Move to the parallel version using OpenMP
 - Use some triangular/tetrahedral mesh to test the problem. You may use the examples indicated in the generateMesh function of matlab or other tools available on the web (for instance the code triangle for triangular mesh and the code gmsh or tetgen for tetrahedral meshes). For the test you can just choose a portion of the domain boundary where to fix u and then see what happens. You may use paraview to see the solution (particularly useful in 3D)
   */
+#define PHDIM 2
+
+#include <vector>
+#include <Eigen/Core>
+#include "Eigen/Core"
 #include "Eigen/Core"
 
+typedef Eigen::Matrix<double, PHDIM, 1> Point;
+//now we will implement this algorithm Fast iterative method (X,L)
+//define hash function for Point
+namespace std {
+    template<>
+    struct hash<Point> {
+        std::size_t operator()(const Point &k) const {
+            using std::size_t;
+            using std::hash;
+            using std::string;
+            // Compute individual hash values for first,
+            // second and third and combine them using XOR
+            // and bit shifting:
+            return ((hash<double>()(k[0])
+                     ^ (hash<double>()(k[1]) << 1)) >> 1);
+        }
+    };
+}
+
+void FIM(std::unordered_map<Point, double> &U, std::vector<Point> X, std::vector<Point> L,
+         std::unordered_map<Point, std::vector<Point>> neighbors) {
+    //1. Initialization (X : a set of grid nodes, L : active list)
+    U.reserve(X.size());
+
+
+    for (auto &i: X) {
+        //if x[i] is the 0,0 point
+        if (i[0] == 0 && i[1] == 0) {
+            U.insert({i, 0});
+        } else {
+            U.insert({i, std::numeric_limits<double>::infinity()});
+        }
+
+    }
+    for (int i = 0; i < X.size(); i++) {
+        for (int j = 0; j < X[i].size(); j++) {
+            if (X[i][j] == 0) {
+                L.emplace_back(i, j);
+            }
+        }
+    }
+    //2. Update points in L
+    while (!L.empty()) {
+        //for every point in L
+        for (const auto &i: L) {
+            double p = U[i];
+            //find neighbors of L[i] and get the base
+            std::vector<Point> neighbors2 = neighbors[i];
+
+
+        }
+
+
+        for (int i = 0; i < L.size(); i++) {
+            for (int j = 0; j < L[i].size(); j++) {
+                double p, q;
+                //double p =U
+                //p=U(x)
+                //q=solution of g(x)=0
+                //U(x)=q
+                if (abs(p - q) < 0.0001) {
+                    for (int i = 0; i < X.size(); i++) {
+                        for (int j = 0; j < X[i].size(); j++) {
+                            if (X[i][j] == 0) {
+                                //add x to L
+                            }
+                        }
+                    }
+                }
+                for (int i = 0; i < X.size(); i++) {
+                    for (int j = 0; j < X[i].size(); j++) {
+                        if (X[i][j] == 0) {
+                            //U(x)=q
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
 
 int main() {
    std::cout<<"Hello world" <<std::endl;

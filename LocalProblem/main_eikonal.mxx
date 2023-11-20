@@ -12,9 +12,6 @@ int main()
 {
     // create a simplex
 #if DIMENSION==2
-
-
-
 constexpr std::size_t PHDIM=2;
 
     using Point=Eikonal::Eikonal_traits<PHDIM>::Point;

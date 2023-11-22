@@ -49,26 +49,15 @@ Both class of methods rely on the solution of a local problem, which is an optim
 #include <Eigen/Core>
 #include "Eigen/Core"
 #include "Eigen/Core"
+#include <PointsEdge.h>
+#include <memory>
 
 typedef Eigen::Matrix<double, PHDIM, 1> Point;
 //now we will implement this algorithm Fast iterative method (X,L)
 //define hash function for Point
-namespace std {
-    template<>
-    struct hash<Point> {
-        std::size_t operator()(const Point &k) const {
-            using std::size_t;
-            using std::hash;
-            using std::string;
-            // Compute individual hash values for first,
-            // second and third and combine them using XOR
-            // and bit shifting:
-            return ((hash<double>()(k[0])
-                     ^ (hash<double>()(k[1]) << 1)) >> 1);
-        }
-    };
-}
 
+
+/*
 void FIM(std::unordered_map<Point, double> &U, std::vector<Point> X, std::vector<Point> L,
          std::unordered_map<Point, std::vector<Point>> neighbors) {
     //1. Initialization (X : a set of grid nodes, L : active list)
@@ -130,13 +119,54 @@ void FIM(std::unordered_map<Point, double> &U, std::vector<Point> X, std::vector
         }
     }
 }
+*/
+
+
 
 int main() {
-   std::cout<<"Hello world" <<std::endl;
+    FILE *fp;
+    fp = fopen("test1.txt", "r");
+    int n_points;
+    fscanf(fp, "%d", &n_points);
+    int n_edges;
+    fscanf(fp, "%d", &n_edges);
+    std::unordered_map<Point, std::vector<Point>> readed;
+    std::vector<Point> Points;
+    std::vector<Point> Edges;
+    PointsEdge pointsEdge;
+    //smart pointer
+    std::unique_ptr<PointsEdge> p;
+    p = std::make_unique<PointsEdge>();
+
+    while (!feof(fp)) {
+        Point p1, p2;
+
+        (void) fscanf(fp, "%lf ,%lf %lf ,%lf", &p1[0], &p1[1], &p2[0], &p2[1]);
+        readed[p1].push_back(p2);
+        readed[p2].push_back(p1);
+    }
+
+    printf("t");
+    //remove duplicates in each vector in map
+    for (auto &i: readed) {
+        std::sort(i.second.begin(), i.second.end(), [](Point const &a, Point const &b) {
+            return (pow(a[0], 2) + pow(a[1], 2)) < (pow(b[0], 2) + pow(b[1], 2));
+        });
+        i.second.erase(std::unique(i.second.begin(), i.second.end()), i.second.end());
+    }
+    int k = 0;
+    for (auto &i: readed) {
+        pointsEdge.index[i.first].start = 0;
+        for (const auto &j: i.second) {
+            pointsEdge.adjacentList.push_back(j);
+            k++;
+        }
+        pointsEdge.index[i.first].end = k;
+    }
+    printf("t");
+    for (auto &i: readed) {
+        pointsEdge.list.push_back(i.first);
+    }
+    printf("t");
    return 0;
-
-
-
-
-
 }

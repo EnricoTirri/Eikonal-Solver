@@ -19,9 +19,12 @@ namespace Eikonal
 template <std::size_t PHDIM> struct EikonalSolution
 {
   using Vector=typename apsc::LineSearch_traits_base<PHDIM - 1u>::Vector;
-  double  value; //! The value at the new point
-  Vector  lambda; //! The value(s) of lambda (foot of the characteristics)
-  int     status; //! 0= converged 1=no descent direction 2=no convergence
+        //! The value at the new point
+        double value;
+        //! The value(s) of lambda (foot of the characteristics)
+        Vector lambda;
+        //! 0= converged 1=no descent direction 2=no convergence
+        int status;
 };
 
 /*!

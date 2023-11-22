@@ -253,18 +253,17 @@ int main() {
     double square[16][16];
     std::ofstream out("out.csv");
 
+    out << "x" << "," << "y" << "," << "z" << std::endl;
     for (auto a: U) {
-        int x = static_cast<int>( a.first[0]);
-        int y = static_cast<int>(a.first[1]);
-        square[x][y] = a.second;
+        out << a.first[0] << "," << a.first[1] << "," << a.second << std::endl;
     }
-
-    for (int i = 0; i < 16; i++) {
-        int j;
-        for (j = 0; j < 15; j++)
-            out << square[i][j] << "\t";
-        out << square[i][j] << std::endl;
-    }
+//
+//    for (int i = 0; i < 16; i++) {
+//        int j;
+//        for (j = 0; j < 15; j++)
+//            out << square[i][j] << "\t";
+//        out << square[i][j] << std::endl;
+//    }
 
     out.flush();
     out.close();

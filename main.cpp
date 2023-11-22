@@ -65,16 +65,15 @@ void FIM(std::unordered_map<Point, double> &U, std::vector<Point> X, std::vector
 
     U.reserve(data.index.size());
     std::vector<Point> startPoints;
-
+    #pragma omp parallel for
     for (auto &i: data.index) {
-        //if i.first is in X then U(i.first)=0 else U(i.first)=inf
-        if (std::find(X.begin(), X.end(), i.first) != X.end()) {//TODO moev this in another loop
-            U.insert({i.first, 0});
-            startPoints.push_back(i.first);
-        } else {
-            U.insert({i.first, std::numeric_limits<double>::infinity()});
-        }
+        U.insert({i.first, std::numeric_limits<double>::infinity()});
     }
+    for(auto i:X){
+    U[i]=0;
+    startPoints.push_back(i);
+    }
+
     std::size_t start, end;
     for (const auto &i: startPoints) {
         start = data.index[i].start;
@@ -137,10 +136,6 @@ void FIM(std::unordered_map<Point, double> &U, std::vector<Point> X, std::vector
                     L.push_back(k);
             }
             (void) std::remove(L.begin(), L.end(), i);
-
-
-
-
         }
 
 
@@ -190,5 +185,11 @@ int main() {
     }
     printf("t");
     printf("t");
+
+    //let's 
+
+
+
+
    return 0;
 }

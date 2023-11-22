@@ -32,7 +32,7 @@ namespace std {
             return hashed;
         }
     };
-};
+}
 typedef struct {
     std::size_t start, end;
 } n_range;

@@ -57,70 +57,63 @@ typedef Eigen::Matrix<double, PHDIM, 1> Point;
 //define hash function for Point
 
 
-/*
-void FIM(std::unordered_map<Point, double> &U, std::vector<Point> X, std::vector<Point> L,
-         std::unordered_map<Point, std::vector<Point>> neighbors) {
+//X will be the starting point from witch the wave will propagate, L is the active list
+void FIM(std::unordered_map<Point, double> &U, std::vector<Point> X, std::vector<Point> L, PointsEdge &data) {
     //1. Initialization (X : a set of grid nodes, L : active list)
-    U.reserve(X.size());
+    U.reserve(data.index.size());
+    std::vector<Point> startPoints;
 
-
-    for (auto &i: X) {
-        //if x[i] is the 0,0 point
-        if (i[0] == 0 && i[1] == 0) {
-            U.insert({i, 0});
+    for (auto &i: data.index) {
+        //if i.first is in X then U(i.first)=0 else U(i.first)=inf
+        if (std::find(X.begin(), X.end(), i.first) != X.end()) {
+            U.insert({i.first, 0});
+            startPoints.push_back(i.first);
         } else {
-            U.insert({i, std::numeric_limits<double>::infinity()});
+            U.insert({i.first, std::numeric_limits<double>::infinity()});
+        }
+    }
+    std::size_t start, end;
+    for (const auto &i: startPoints) {
+        start = data.index[i].start;
+        end = data.index[i].end;
+        for (std::size_t j = start; j < end; j++) {
+            L.push_back(data.adjacentList[j]);
         }
 
     }
-    for (int i = 0; i < X.size(); i++) {
-        for (int j = 0; j < X[i].size(); j++) {
-            if (X[i][j] == 0) {
-                L.emplace_back(i, j);
-            }
-        }
-    }
+
+
     //2. Update points in L
     while (!L.empty()) {
         //for every point in L
         for (const auto &i: L) {
             double p = U[i];
-            //find neighbors of L[i] and get the base
-            std::vector<Point> neighbors2 = neighbors[i];
-
-
-        }
-
-
-        for (int i = 0; i < L.size(); i++) {
-            for (int j = 0; j < L[i].size(); j++) {
-                double p, q;
-                //double p =U
-                //p=U(x)
-                //q=solution of g(x)=0
-                //U(x)=q
-                if (abs(p - q) < 0.0001) {
-                    for (int i = 0; i < X.size(); i++) {
-                        for (int j = 0; j < X[i].size(); j++) {
-                            if (X[i][j] == 0) {
-                                //add x to L
-                            }
-                        }
-                    }
-                }
-                for (int i = 0; i < X.size(); i++) {
-                    for (int j = 0; j < X[i].size(); j++) {
-                        if (X[i][j] == 0) {
-                            //U(x)=q
-                        }
-                    }
-                }
+            //find neighbors of L[i] and get the base (the PHDIM points with the smallest value of U)
+            std::vector<Point> neighbors;
+            std::size_t start, end;
+            start = data.index[i].start;
+            end = data.index[i].end;
+            for (std::size_t j = start; j < end; j++) {
+                neighbors.push_back(data.adjacentList[j]);
             }
+            std::sort(neighbors.begin(), neighbors.end(), [&U](Point const &a, Point const &b) {
+                return U[a] < U[b];
+            });
+            std::vector<Point> base;
+            for (int j = 0; j < PHDIM; j++) {
+                base.push_back(neighbors[j]);
+            }
+            //solve the local problem
+            //TODO: solve the local problem with LocalProblem
+            //TODO: for each neighbor of L[i] check if the propagation would improve time, if so add it to L
+
+
+
         }
+
+
     }
 }
-*/
-
 
 
 int main() {

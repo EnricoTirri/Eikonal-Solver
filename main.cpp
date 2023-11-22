@@ -68,7 +68,7 @@ void FIM(std::unordered_map<Point, double> &U, std::vector<Point> X, std::vector
     std::vector<Point> startPoints;
 #pragma omp parallel for
     for (auto &i: data.index) {
-        U.insert({i.first, std::numeric_limits<double>::infinity()});
+        U.insert({i.first, 999999});
     }
     for (auto i: X) {
         U[i] = 0;
@@ -103,8 +103,16 @@ void FIM(std::unordered_map<Point, double> &U, std::vector<Point> X, std::vector
                 return U[a] < U[b];
             });
             std::array<Point, PHDIM + 1> base;
-            for (int j = 0; j < PHDIM && j < (neighbors.size() - 1); j++) {
+            int j;
+            for (j = 0; j < PHDIM && j < (neighbors.size() - 1); j++) {
                 base[j] = neighbors[j];
+            }
+            //TODO if j<PHDIM-1 will with infty
+            for (int k = j; k < PHDIM; k++) {
+                Point p;
+                p[0] = -1.;
+                p[1] = -1.;
+                base[k] = p;
             }
             base[PHDIM] = i;
             Eikonal::Eikonal_traits<PHDIM>::MMatrix M;
@@ -118,10 +126,18 @@ void FIM(std::unordered_map<Point, double> &U, std::vector<Point> X, std::vector
             //init values size to PHDIM
             values.resize(PHDIM);
             //value will be the value of U at the base points - the last one
-            for (int j = 0; j < PHDIM; j++) {
-                values[j] = U[base[j]];
+            int j2;
+            for (j2 = 0; j2 < j; j2++) {
+                values[j2] = U[base[j2]];
             }
-            Eikonal::solveEikonalLocalProblem<PHDIM> solver{std::move(simplex), values};
+            for (std::size_t k = j2; k < PHDIM; k++) {
+                //m
+                values[k] = 999999;
+            }
+
+
+            Eikonal::solveEikonalLocalProblem<PHDIM> solver{std::move(simplex),
+                                                            values};//TODO: edit local solver to ignore value negative or to allow infty
             auto sol = solver();
             //if no descent direction or no convergence kill the process
             if (sol.status != 0) {
@@ -136,8 +152,6 @@ void FIM(std::unordered_map<Point, double> &U, std::vector<Point> X, std::vector
                 for (auto k: neighbors)
                     L.push_back(k);
             }
-            auto index = std::find(L.begin(), L.end(), i);
-            printf("%f\n", index->x());
             (void) std::remove(L.begin(), L.end(), i);
         }
 
@@ -204,6 +218,11 @@ int main() {
     start << 0.0, 0.0;
     X.push_back(start);
     FIM(U, X, L, pointsEdge);
+    double square[16][16];
+//    for(auto i: U)
+//    {
+//        square[(floor(i.first[0])),
+//    }
 
 
     return 0;

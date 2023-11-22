@@ -20,13 +20,12 @@ constexpr std::size_t PHDIM=2;
     p1<<0.,0.1;
     p2<<0.,1.5;
     p3<<1.,0.;
-    p4<<0.1,0.;
 
     Eikonal::Eikonal_traits<PHDIM>::MMatrix M;
-    M<<3.0,0.0,
-       0.0,9.0;
+    M << 1.0, 0.0,
+            0.0, 1.0;
     VectorExt values;
-    values<<1.,2.;          //values of u at the base
+    values << 1., 9999;          //values of u at the base
     Eikonal::SimplexData<PHDIM> simplex{{p1,p2,p3},M};
 
     Eikonal::solveEikonalLocalProblem<PHDIM> solver{simplex,values};

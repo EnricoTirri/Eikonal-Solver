@@ -10,8 +10,8 @@ file.write(str(16 * 16 * 4 - 16 * 4 * 2) + "\n")
 for i in range(16):
     for j in range(16):
         if i < 15:
-            file.write(str(i) + ".0 ," + str(j) + ".0 " + str(i + 1) + ".0 ," + str(j) + ".0\n")
+            file.write(str(i) + ".0," + str(j) + ".0 " + str(i + 1) + ".0," + str(j) + ".0\n")
         if j < 15:
-            file.write(str(i) + ".0 ," + str(j) + ".0 " + str(i) + ".0 ," + str(j + 1) + ".0\n")
+            file.write(str(i) + ".0," + str(j) + ".0 " + str(i) + ".0," + str(j + 1) + ".0\n")
 
 file.close()

@@ -1,3 +1,5 @@
+#include "LocalProblem/include/SimplexData.hpp"
+#include "LocalProblem/include/solveEikonalLocalProblem.hpp"
 #include <iostream>
 
 //subset simbol: ⊂
@@ -51,6 +53,7 @@ Both class of methods rely on the solution of a local problem, which is an optim
 #include "Eigen/Core"
 #include <PointsEdge.h>
 #include <memory>
+#include "SimplexData.hpp"
 
 typedef Eigen::Matrix<double, PHDIM, 1> Point;
 //now we will implement this algorithm Fast iterative method (X,L)
@@ -99,13 +102,40 @@ void FIM(std::unordered_map<Point, double> &U, std::vector<Point> X, std::vector
             std::sort(neighbors.begin(), neighbors.end(), [&U](Point const &a, Point const &b) {
                 return U[a] < U[b];
             });
-            std::vector<Point> base;
-            for (int j = 0; j < PHDIM; j++) {
-                base.push_back(neighbors[j]);
+            std::array<Point, PHDIM + 1> base;
+            for (int j = 0; j < PHDIM || j < (neighbors.size() - 1); j++) {
+                base[j] = neighbors[j];
             }
-            //solve the local problem
-            //TODO: solve the local problem with LocalProblem
-            //TODO: for each neighbor of L[i] check if the propagation would improve time, if so add it to L
+            base[PHDIM] = i;
+            Eikonal::Eikonal_traits<PHDIM>::MMatrix M;
+            //for now the speed will be constant so M will be the identity matrix
+            M = Eikonal::Eikonal_traits<PHDIM>::MMatrix::Identity();
+
+            Eikonal::SimplexData<PHDIM> simplex{base, M};
+            //TODO: we can improve this  step by directly constructing the SimplexData object but for niw this will do
+            using VectorExt = Eikonal::Eikonal_traits<PHDIM>::VectorExt;
+            VectorExt values;
+            //init values size to PHDIM
+            values.resize(PHDIM);
+            //value will be the value of U at the base points - the last one
+            for (int j = 0; j < PHDIM; j++) {
+                values[j] = U[base[j]];
+            }
+            Eikonal::solveEikonalLocalProblem<PHDIM> solver{std::move(simplex), values};
+            Eikonal::EikonalSolution<PHDIM> sol = solver();
+            //if no descent direction or no convergence kill the process
+            if (sol.status != 0) {
+                return;
+            }
+            auto newU = sol.value;
+            //if the new value is smaller than the old one update it
+            if (newU < p) {
+                U[i] = newU;
+                //TODO: for each neighbor of L[i] check if the propagation would improve time, if so add it to L
+                //maybe we don't need to check because we are already doing it in the while loop ? not sure
+
+            }
+
 
 
 

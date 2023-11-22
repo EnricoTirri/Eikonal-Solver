@@ -2,6 +2,8 @@
 #include "LocalProblem/include/solveEikonalLocalProblem.hpp"
 #include <iostream>
 #include <algorithm>
+#include <fstream>
+#include <cmath>
 
 //subset simbol: ⊂
 
@@ -50,8 +52,6 @@ Both class of methods rely on the solution of a local problem, which is an optim
 
 #include <vector>
 #include <Eigen/Core>
-#include "Eigen/Core"
-#include "Eigen/Core"
 #include <PointsEdge.h>
 #include <memory>
 #include "SimplexData.hpp"
@@ -61,24 +61,31 @@ typedef Eigen::Matrix<double, PHDIM, 1> Point;
 //define hash function for Point
 
 
+double solveQuadratic(double a, double b, double c){
+    double u = c + 1;
+    if (u <= b) return u;
+    u = (b+c+std::sqrt(-(b*b) - (c*c) + 2*b*c +2))/2;
+    if(u <= a) return u;
+    u = (2*(a+b+c) + std::sqrt(4*(a+b+c)*(a+b+c) - 12*(a*a + b*b + c*c -1)))/6;
+    return u;
+}
+
 //X will be the starting point from witch the wave will propagate, L is the active list
 void FIM(std::unordered_map<Point, double> &U, std::vector<Point> X, std::vector<Point> L, PointsEdge &data) {
 
     U.reserve(data.index.size());
-    std::vector<Point> startPoints;
+
 #pragma omp parallel for
     for (auto &i: data.index) {
         U.insert({i.first, 999999});
     }
     for (auto i: X) {
         U[i] = 0;
-        startPoints.push_back(i);
     }
 
-    std::size_t start, end;
-    for (const auto &i: startPoints) {
-        start = data.index[i].start;
-        end = data.index[i].end;
+    for (const auto &i: X) {
+        std::size_t start = data.index[i].start;
+        std::size_t end = data.index[i].end;
         for (std::size_t j = start; j < end; j++) {
             L.push_back(data.adjacentList[j]);
         }
@@ -88,9 +95,14 @@ void FIM(std::unordered_map<Point, double> &U, std::vector<Point> X, std::vector
 
     //2. Update points in L
     while (!L.empty()) {
-        //for every point in L
-        for (const auto &i: L) {
+
+        std::vector<Point> next_L;
+
+        for(auto i : L) {
+
+            //take time value of point p
             double p = U[i];
+
             //find neighbors of L[i] and get the base (the PHDIM points with the smallest value of U)
             std::vector<Point> neighbors;
             std::size_t start, end;
@@ -99,9 +111,12 @@ void FIM(std::unordered_map<Point, double> &U, std::vector<Point> X, std::vector
             for (std::size_t j = start; j < end; j++) {
                 neighbors.push_back(data.adjacentList[j]);
             }
+            //sorting neighbors on arrival time
             std::sort(neighbors.begin(), neighbors.end(), [&U](Point const &a, Point const &b) {
                 return U[a] < U[b];
             });
+
+            //build base
             std::array<Point, PHDIM + 1> base;
             int j;
             for (j = 0; j < PHDIM && j < (neighbors.size() - 1); j++) {
@@ -115,12 +130,15 @@ void FIM(std::unordered_map<Point, double> &U, std::vector<Point> X, std::vector
                 base[k] = p;
             }
             base[PHDIM] = i;
+
+            //test M = identity
             Eikonal::Eikonal_traits<PHDIM>::MMatrix M;
-            //for now the speed will be constant so M will be the identity matrix
             M = Eikonal::Eikonal_traits<PHDIM>::MMatrix::Identity();
 
+            //build data structure for localproblemsolver
             Eikonal::SimplexData<PHDIM> simplex{base, M};
             //TODO: we can improve this  step by directly constructing the SimplexData object but for niw this will do
+
             using VectorExt = Eikonal::Eikonal_traits<PHDIM>::VectorExt;
             VectorExt values;
             //init values size to PHDIM
@@ -130,7 +148,7 @@ void FIM(std::unordered_map<Point, double> &U, std::vector<Point> X, std::vector
             for (j2 = 0; j2 < j; j2++) {
                 values[j2] = U[base[j2]];
             }
-            for (std::size_t k = j2; k < PHDIM; k++) {
+            for (int k = j2; k < PHDIM; k++) {
                 //m
                 values[k] = 999999;
             }
@@ -141,56 +159,69 @@ void FIM(std::unordered_map<Point, double> &U, std::vector<Point> X, std::vector
             auto sol = solver();
             //if no descent direction or no convergence kill the process
             if (sol.status != 0) {
+                printf("error on convergence");
                 return;
             }
             auto newU = sol.value;
+
+            //newU = solveQuadratic(999999,values[1],values[0]);
+            //  printf("%f\n",newU);
             //if the new value is smaller than the old one update it
             if (newU < p) {
                 U[i] = newU;
                 //TODO: for each neighbor of L[i] check if the propagation would improve time, if so add it to L
                 //maybe we don't need to check because we are already doing it in the while loop ? not sure
+
                 for (auto k: neighbors)
-                    L.push_back(k);
+                    next_L.push_back(k);
             }
-            (void) std::remove(L.begin(), L.end(), i);
+
         }
-
-
+        L = next_L;
     }
 }
 
 
 int main() {
+    //open file
     FILE *fp;
     fp = fopen("test1.txt", "r");
+    if (fp == NULL) {
+        printf("Test file not found");
+        return 1;
+    }
+
+    //read # points
     int n_points;
     fscanf(fp, "%d", &n_points);
+    //read # edges
     int n_edges;
     fscanf(fp, "%d", &n_edges);
-    std::unordered_map<Point, std::vector<Point>> readed;
-    std::vector<Point> Points;
-    std::vector<Point> Edges;
-    PointsEdge pointsEdge;
-    //smart pointer
-    std::unique_ptr<PointsEdge> p;
-    p = std::make_unique<PointsEdge>();
 
+    //support structure for parsing file
+    std::unordered_map<Point, std::vector<Point>> readed;
+
+    //final structure
+    PointsEdge pointsEdge;
+
+    //parsing function
     while (!feof(fp)) {
         Point p1, p2;
 
-        (void) fscanf(fp, "%lf ,%lf %lf ,%lf", &p1[0], &p1[1], &p2[0], &p2[1]);
+        (void) fscanf(fp, "%lf,%lf %lf,%lf", &p1[0], &p1[1], &p2[0], &p2[1]);
         readed[p1].push_back(p2);
         readed[p2].push_back(p1);
     }
+    printf("end parsing");
 
-    printf("t");
     //remove duplicates in each vector in map
-    for (auto &i: readed) {
-        std::sort(i.second.begin(), i.second.end(), [](Point const &a, Point const &b) {
-            return (pow(a[0], 2) + pow(a[1], 2)) < (pow(b[0], 2) + pow(b[1], 2));
-        });
-        i.second.erase(std::unique(i.second.begin(), i.second.end()), i.second.end());
-    }
+//    for (auto &i: readed) {
+//        std::sort(i.second.begin(), i.second.end(), [](Point const &a, Point const &b) {
+//            return (pow(a[0], 2) + pow(a[1], 2)) < (pow(b[0], 2) + pow(b[1], 2));
+//        });
+//        i.second.erase(std::unique(i.second.begin(), i.second.end()), i.second.end());
+//    }
+
     int k = 0;
     size_t prev = 0;
     for (auto &i: readed) {
@@ -215,10 +246,29 @@ int main() {
     std::vector<Point> L;
     std::vector<Point> X;
     Point start;
-    start << 0.0, 0.0;
+    start << 8.0, 8.0;
     X.push_back(start);
     FIM(U, X, L, pointsEdge);
+
     double square[16][16];
+    std::ofstream out("out.csv");
+
+    for (auto a: U) {
+        int x = static_cast<int>( a.first[0]);
+        int y = static_cast<int>(a.first[1]);
+        square[x][y] = a.second;
+    }
+
+    for (int i = 0; i < 16; i++) {
+        int j;
+        for (j = 0; j < 15; j++)
+            out << square[i][j] << "\t";
+        out << square[i][j] << std::endl;
+    }
+
+    out.flush();
+    out.close();
+
 //    for(auto i: U)
 //    {
 //        square[(floor(i.first[0])),

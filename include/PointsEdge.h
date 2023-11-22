@@ -39,7 +39,6 @@ typedef struct {
 
 class [[maybe_unused]] PointsEdge {
 public:
-    std::vector<Point> list;
     std::vector<Point> adjacentList;
     std::unordered_map<Point, n_range> index;
 };

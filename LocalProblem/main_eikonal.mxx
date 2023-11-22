@@ -5,7 +5,7 @@
  *      Author: forma
  */
 #include "Phi.hpp"
-#include "solveEikonalLocalProblem.hpp"
+#include <solveEikonalLocalProblem.hpp>
 #include <iostream>
 #
 int main()

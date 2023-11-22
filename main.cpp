@@ -62,13 +62,13 @@ typedef Eigen::Matrix<double, PHDIM, 1> Point;
 
 //X will be the starting point from witch the wave will propagate, L is the active list
 void FIM(std::unordered_map<Point, double> &U, std::vector<Point> X, std::vector<Point> L, PointsEdge &data) {
-    //1. Initialization (X : a set of grid nodes, L : active list)
+
     U.reserve(data.index.size());
     std::vector<Point> startPoints;
 
     for (auto &i: data.index) {
         //if i.first is in X then U(i.first)=0 else U(i.first)=inf
-        if (std::find(X.begin(), X.end(), i.first) != X.end()) {
+        if (std::find(X.begin(), X.end(), i.first) != X.end()) {//TODO moev this in another loop
             U.insert({i.first, 0});
             startPoints.push_back(i.first);
         } else {
@@ -122,7 +122,7 @@ void FIM(std::unordered_map<Point, double> &U, std::vector<Point> X, std::vector
                 values[j] = U[base[j]];
             }
             Eikonal::solveEikonalLocalProblem<PHDIM> solver{std::move(simplex), values};
-            Eikonal::EikonalSolution<PHDIM> sol = solver();
+            auto sol = solver();
             //if no descent direction or no convergence kill the process
             if (sol.status != 0) {
                 return;
@@ -133,8 +133,10 @@ void FIM(std::unordered_map<Point, double> &U, std::vector<Point> X, std::vector
                 U[i] = newU;
                 //TODO: for each neighbor of L[i] check if the propagation would improve time, if so add it to L
                 //maybe we don't need to check because we are already doing it in the while loop ? not sure
-
+                for (auto k: neighbors)
+                    L.push_back(k);
             }
+            (void) std::remove(L.begin(), L.end(), i);
 
 
 
@@ -187,9 +189,6 @@ int main() {
         pointsEdge.index[i.first].end = k;
     }
     printf("t");
-    for (auto &i: readed) {
-        pointsEdge.list.push_back(i.first);
-    }
     printf("t");
    return 0;
 }

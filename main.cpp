@@ -1,6 +1,7 @@
 #include "LocalProblem/include/SimplexData.hpp"
 #include "LocalProblem/include/solveEikonalLocalProblem.hpp"
 #include <iostream>
+#include <algorithm>
 
 //subset simbol: ⊂
 
@@ -65,13 +66,13 @@ void FIM(std::unordered_map<Point, double> &U, std::vector<Point> X, std::vector
 
     U.reserve(data.index.size());
     std::vector<Point> startPoints;
-    #pragma omp parallel for
+#pragma omp parallel for
     for (auto &i: data.index) {
         U.insert({i.first, std::numeric_limits<double>::infinity()});
     }
-    for(auto i:X){
-    U[i]=0;
-    startPoints.push_back(i);
+    for (auto i: X) {
+        U[i] = 0;
+        startPoints.push_back(i);
     }
 
     std::size_t start, end;
@@ -102,7 +103,7 @@ void FIM(std::unordered_map<Point, double> &U, std::vector<Point> X, std::vector
                 return U[a] < U[b];
             });
             std::array<Point, PHDIM + 1> base;
-            for (int j = 0; j < PHDIM || j < (neighbors.size() - 1); j++) {
+            for (int j = 0; j < PHDIM && j < (neighbors.size() - 1); j++) {
                 base[j] = neighbors[j];
             }
             base[PHDIM] = i;
@@ -135,6 +136,8 @@ void FIM(std::unordered_map<Point, double> &U, std::vector<Point> X, std::vector
                 for (auto k: neighbors)
                     L.push_back(k);
             }
+            auto index = std::find(L.begin(), L.end(), i);
+            printf("%f\n", index->x());
             (void) std::remove(L.begin(), L.end(), i);
         }
 
@@ -175,21 +178,33 @@ int main() {
         i.second.erase(std::unique(i.second.begin(), i.second.end()), i.second.end());
     }
     int k = 0;
+    size_t prev = 0;
     for (auto &i: readed) {
-        pointsEdge.index[i.first].start = 0;
+        if (k == 0)
+            pointsEdge.index[i.first].start = 0;
+        else
+            pointsEdge.index[i.first].start = prev;
+
         for (const auto &j: i.second) {
             pointsEdge.adjacentList.push_back(j);
             k++;
         }
         pointsEdge.index[i.first].end = k;
+        prev = k;
     }
     printf("t");
+
     printf("t");
 
-    //let's 
+    //let's try it
+    std::unordered_map<Point, double> U;
+    std::vector<Point> L;
+    std::vector<Point> X;
+    Point start;
+    start << 0.0, 0.0;
+    X.push_back(start);
+    FIM(U, X, L, pointsEdge);
 
 
-
-
-   return 0;
+    return 0;
 }

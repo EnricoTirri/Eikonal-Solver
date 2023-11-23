@@ -54,7 +54,6 @@ Both class of methods rely on the solution of a local problem, which is an optim
 #include <PointsEdge.h>
 #include <memory>
 #include "SimplexData.hpp"
-
 typedef Eigen::Matrix<double, DIMENSION, 1> Point;
 //now we will implement this algorithm Fast iterative method (X,L)
 //define hash function for Point
@@ -76,7 +75,7 @@ void FIM(std::unordered_map<Point, double> &U, std::vector<Point> X, std::vector
 
 #pragma omp parallel for
     for (auto &i: data.index) {
-        U.insert({i.first, 99999e10});
+        U.insert({i.first, MAXFLOAT});
     }
 #pragma omp parallel for
     for (const auto &i: X) {
@@ -114,13 +113,26 @@ void FIM(std::unordered_map<Point, double> &U, std::vector<Point> X, std::vector
             std::array<Point, DIMENSION + 1> base;
             std::size_t j;
             Point last;
-            for (j = 0; j < DIMENSION && j < (neighbors.size() - 1); j++) {
+            double last_v;
+            using VectorExt = Eikonal::Eikonal_traits<DIMENSION>::VectorExt;
+            VectorExt values;
+            values.resize(DIMENSION);
+            for (j = 0; j < DIMENSION && j < (neighbors.size() - 1) && U[neighbors[j]] != MAXFLOAT; j++) {
                 base[j] = neighbors[j];
+                values[static_cast<int>(j)] = U[neighbors[j]];
                 last = neighbors[j];
+                last_v = U[neighbors[j]];
             }
             //if j<DIMENSION-1 the last points will be duplicates
             for (std::size_t k = j; k < DIMENSION; k++) {
+                values[static_cast<int>(k)] = last_v;
                 base[k] = last;
+            }
+            for (auto value: values) {
+                if (value < 0) {
+                    printf("error");
+                    return;
+                }
             }
             base[DIMENSION] = i;
 
@@ -131,21 +143,6 @@ void FIM(std::unordered_map<Point, double> &U, std::vector<Point> X, std::vector
 
             //build data structure for localproblemsolver
             Eikonal::SimplexData<DIMENSION> simplex{base, M};
-
-            using VectorExt = Eikonal::Eikonal_traits<DIMENSION>::VectorExt;
-            VectorExt values;
-            //init values size to DIMENSION
-            values.resize(DIMENSION);
-            //value will be the value of U at the base points - the last one
-            int j2;
-            double last_v;
-            for (j2 = 0; j2 < j; j2++) {
-                values[j2] = U[base[j2]];
-                last_v = values[j2];
-            }
-            for (std::size_t k = j2; k < DIMENSION; k++) {
-                values[k] = last_v;
-            }
 
 
             Eikonal::solveEikonalLocalProblem<DIMENSION> solver{std::move(simplex),

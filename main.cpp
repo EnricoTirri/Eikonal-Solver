@@ -146,13 +146,8 @@ void FIM(std::unordered_map<Point, double> &U, std::vector<Point> X, std::vector
 
 
 int main() {
-
     VtkParser parser;
     parser.open("testmesh.vtk");
-    parser.save("outtest.vtk");
-
-
-
 
     //open file
     FILE *fp;
@@ -227,6 +222,8 @@ int main() {
     start1 << 9.0, 12.0;
     X.push_back(start1);
     FIM(U, X, L, pointsEdge);
+
+
 
     return 0;
 }

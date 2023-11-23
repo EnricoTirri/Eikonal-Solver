@@ -21,7 +21,6 @@ void VtkParser::open(const std::string &filename) {
     if (filetype != "ASCII") {
         std::cout << "error wrong file type" << std::endl;
         return;
-
     }
 
 
@@ -50,7 +49,7 @@ void VtkParser::ascii_parser(std::ifstream *in) {
 
             points.clear();
             for (int i = 0; i < n_points; ++i) {
-                float x, y, z;
+                double x, y, z;
                 *in >> x;
                 *in >> y;
                 *in >> z;
@@ -130,5 +129,29 @@ void VtkParser::save(const string &filename) {
     for(auto cell : cells){
         out << cell.type << endl;
     }
+}
+
+void VtkParser::loadTriangular(const std::vector<double[3]>& new_points, const std::vector<std::vector<int>>& new_cells,
+                     std::vector<std::vector<double>> point_data, std::vector<std::vector<double>> cell_data) {
+    status = 0;
+    points.clear();
+    cells.clear();
+    auto data = point_data.begin();
+    for(const auto& temp_p : new_points){
+        points.emplace_back(temp_p[0], temp_p[1], temp_p[2],*data);
+        ++data;
+    }
+
+    data = cell_data.begin();
+    for(const auto& temp_c : new_cells){
+        cells.emplace_back(5, temp_c, *data);
+        ++data;
+    }
+
+    dataset_type = "UNSTRUCTURED_GRID";
+    header = "# vtk DataFile Version 2.0";
+    description = "triangular mesh loaded from computed data";
+    filetype = "ASCII";
+    status = 1;
 }
 

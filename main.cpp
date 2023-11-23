@@ -4,6 +4,7 @@
 #include <algorithm>
 #include <fstream>
 #include <cmath>
+#include "VtkParser.hpp"
 
 //subset simbol: ⊂
 
@@ -52,8 +53,7 @@ Both class of methods rely on the solution of a local problem, which is an optim
 #include <vector>
 #include <Eigen/Core>
 #include <PointsEdge.h>
-#include <memory>
-#include "SimplexData.hpp"
+
 typedef Eigen::Matrix<double, DIMENSION, 1> Point;
 //now we will implement this algorithm Fast iterative method (X,L)
 //define hash function for Point
@@ -66,51 +66,6 @@ double solveQuadratic(double a, double b, double c){
     if(u <= a) return u;
     u = (2*(a+b+c) + std::sqrt(4*(a+b+c)*(a+b+c) - 12*(a*a + b*b + c*c -1)))/6;
     return u;
-}
-
-void generate_vtk(PointsEdge mesh, std::unordered_map<Point,double> data){
-    std::ofstream out("out.vtk");
-
-    out << "# vtk DataFile Version 2.0" << std::endl;
-    out << "data output" << std::endl;
-    out << "ASCII" << std::endl;
-    out << "DATASET UNSTRUCTURED_GRID" << std::endl;
-    out << std::endl;
-    out << "POINTS " << mesh.index.size() << " float" << std::endl;
-    std::unordered_map<Point,int> point_indexes;
-
-    int node_index = 0;
-    for(const auto& pair : mesh.index){
-        out << pair.first[0] << " " << pair.first[1] << " " << 0 << std::endl;
-        point_indexes[pair.first] = node_index;
-        node_index++;
-    }
-    out << std::endl;
-
-    out << "CELLS " << mesh.adjacentList.size() << " " << mesh.adjacentList.size() + mesh.adjacentList.size()*2 << std::endl;
-    for(const auto& start_node : mesh.index){
-        size_t range_st = start_node.second.start;
-        size_t range_end = start_node.second.end;
-        for(size_t i = range_st; i<range_end; ++i ){
-            out << 2 << " " << point_indexes[start_node.first] << " " << point_indexes[mesh.adjacentList[i]] << std::endl;
-        }
-    }
-
-    out << std::endl;\
-
-    out << "CELL_TYPES " << mesh.adjacentList.size() << std::endl;
-    for(int i = 0; i < mesh.adjacentList.size(); ++i) out << 3 << std::endl;
-
-    out << std::endl;
-
-    out << "POINT_DATA " << mesh.index.size() << std::endl;
-    out << "SCALARS arrival_time " << "float 1" << std::endl;
-    out << "LOOKUP_TABLE default" << std::endl;
-    for(const auto& pair : mesh.index){
-        out << data[pair.first] << " ";
-    }
-    out.flush();
-    out.close();
 }
 
 //X will be the starting point from witch the wave will propagate, L is the active list
@@ -192,15 +147,13 @@ void FIM(std::unordered_map<Point, double> &U, std::vector<Point> X, std::vector
 
             Eikonal::solveEikonalLocalProblem<DIMENSION> solver{std::move(simplex),
                                                             values};//TODO: edit local solver to ignore value negative or to allow infty
-            auto sol = solver();
-            //if no descent direction or no convergence kill the process
-            if (sol.status != 0) {
-                printf("error on convergence");
-                return;
-            }
-            auto newU = sol.value;
-
-            //newU = solveQuadratic(999999,values[1],values[0]);
+//            auto sol = solver();
+//            //if no descent direction or no convergence kill the process
+//            if (sol.status != 0) {
+//                printf("error on convergence");
+//                return;
+//            }
+            auto newU = solveQuadratic(999999,values[1],values[0]);
             //  printf("%f\n",newU);
             //if the new value is smaller than the old one update it
             if (newU < p) {
@@ -224,6 +177,11 @@ void FIM(std::unordered_map<Point, double> &U, std::vector<Point> X, std::vector
 
 
 int main() {
+
+    VtkParser parser;
+    parser.open("out.vtk");
+
+    parser.save("outtest.vtk");
     //open file
     FILE *fp;
     fp = fopen("test1.txt", "r");
@@ -253,8 +211,6 @@ int main() {
         readed[p1].push_back(p2);
         readed[p2].push_back(p1);
     }
-    printf("end parsing");
-
     //remove duplicates in each vector in map
 //    for (auto &i: readed) {
 //        std::sort(i.second.begin(), i.second.end(), [](Point const &a, Point const &b) {
@@ -278,26 +234,16 @@ int main() {
         pointsEdge.index[i.first].end = k;
         prev = k;
     }
-    printf("t");
-
-    printf("t");
+    printf("end parsing\n");
 
     //let's try it
     std::unordered_map<Point, double> U;
     std::vector<Point> L;
     std::vector<Point> X;
     Point start1, start2, start3, start4;
-    start1 << 0.0, 0.0;
-    start2 << 0.0, 5.0;
-    start3 << 0.0, 10.0;
-    start4 << 0.0, 15.0;
+    start1 << 9.0, 12.0;
     X.push_back(start1);
-    X.push_back(start2);
-    X.push_back(start3);
-    X.push_back(start4);
     FIM(U, X, L, pointsEdge);
-
-    generate_vtk(pointsEdge, U);
 
     return 0;
 }

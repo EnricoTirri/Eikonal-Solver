@@ -54,7 +54,6 @@ Both class of methods rely on the solution of a local problem, which is an optim
 #include <PointsEdge.h>
 #include <memory>
 #include "SimplexData.hpp"
-typedef Eigen::Matrix<double, DIMENSION, 1> Point;
 //now we will implement this algorithm Fast iterative method (X,L)
 //define hash function for Point
 
@@ -122,16 +121,9 @@ void FIM(std::unordered_map<Point, double> &U, std::vector<Point> X, std::vector
     for (auto &i: data.index) {
         U.insert({i.first, MAXFLOAT});
     }
-#pragma omp parallel for
     for (const auto &i: X) {
         U[i] = 0;
-        std::size_t start = data.index[i].start;
-        std::size_t end = data.index[i].end;
-#pragma omp SIMD
-        for (std::size_t j = start; j < end; j++) {
-            L.push_back(data.adjacentList[j]);
-        }
-
+        L.push_back(i);
     }
 
 
@@ -142,80 +134,55 @@ void FIM(std::unordered_map<Point, double> &U, std::vector<Point> X, std::vector
         for (const auto &i: L) {
             //take time value of point p
             double p = U[i];
-            //find neighbors of L[i] and get the base (the DIMENSION points with the smallest value of U)
-            std::vector<Point> neighbors;
+            //find neighbors of L[i] and get the base (the DIMENSION points with the smallest value of U
+            std::vector<mesh_element> neighbors;
             std::size_t start, end;
             start = data.index[i].start;
             end = data.index[i].end;
             for (std::size_t j = start; j < end; j++) {
-                neighbors.push_back(data.adjacentList[j]);
+                neighbors.push_back(static_cast<mesh_element>(*data.adjacentList[j]));
             }
-            //sorting neighbors on arrival time
-            std::sort(neighbors.begin(), neighbors.end(), [&U](Point const &a, Point const &b) {
-                return U[a] < U[b];
-            });
-            //build base
-            std::array<Point, DIMENSION + 1> base;
-            std::size_t j;
-            Point last;
-            double last_v;
-            using VectorExt = Eikonal::Eikonal_traits<DIMENSION>::VectorExt;
-            VectorExt values;
-            values.resize(DIMENSION);
-            for (j = 0; j < DIMENSION && j < (neighbors.size() - 1) && U[neighbors[j]] != MAXFLOAT; j++) {
-                base[j] = neighbors[j];
-                values[static_cast<int>(j)] = U[neighbors[j]];
-                last = neighbors[j];
-                last_v = U[neighbors[j]];
-            }
-            //if j<DIMENSION-1 the last points will be duplicates
-            for (std::size_t k = j; k < DIMENSION; k++) {
-                values[static_cast<int>(k)] = last_v;
-                base[k] = last;
-            }
-            for (auto value: values) {
-                if (value < 0) {
-                    printf("error");
-                    return;
-                }
-            }
-            base[DIMENSION] = i;
-
-            //test M = identity
-            Eikonal::Eikonal_traits<DIMENSION>::MMatrix M;
-            //TODO we need to understand how to construct a useful M matrix with the speeds
-            M = Eikonal::Eikonal_traits<DIMENSION>::MMatrix::Identity();
-
-            //build data structure for localproblemsolver
-            Eikonal::SimplexData<DIMENSION> simplex{base, M};
 
 
-            Eikonal::solveEikonalLocalProblem<DIMENSION> solver{std::move(simplex),
-                                                            values};//TODO: edit local solver to ignore value negative or to allow infty
-            auto sol = solver();
-            //if no descent direction or no convergence kill the process
-            if (sol.status != 0) {
-                printf("error on convergence");
-                return;
-            }
-            auto newU = sol.value;
+            for (auto m_element: neighbors) {
+                for (auto &point: m_element) {
+                    if (point == i) continue;
+                    //if point in L continue
+                    if (std::find(L.begin(), L.end(), point) == L.end()) continue;
 
-            //newU = solveQuadratic(999999,values[1],values[0]);
-            //  printf("%f\n",newU);
-            //if the new value is smaller than the old one update it
-            if (newU < p) {
-                U[i] = newU;
-                /*TODO: for each neighbor of L[i] check if the propagation would improve time, if so add it to L
-                 * maybe we don't need to check because we are already doing it in the while loop ? not sure
-                 * FOR NOW IT SEAMS TO WORK
-                 */
-
-                for (const auto &k: neighbors) {
+                    //solve local problem with this point as unknown and the others as base
+                    std::array<Point, DIMENSION + 1> base;
+                    std::size_t k = 0;
+                    Eikonal::Eikonal_traits<DIMENSION>::VectorExt values;
+                    for (std::size_t j = 0; j < DIMENSION + 1; j++) {
+                        if (m_element[j] == point) {
+                            base[DIMENSION] = point;
+                        } else {
+                            base[k] = m_element[j];
+                            values[static_cast<int>(k)] = U[m_element[j]];
+                            k++;
+                        }
+                    }
+                    Eikonal::Eikonal_traits<DIMENSION>::MMatrix M;
+                    M = Eikonal::Eikonal_traits<DIMENSION>::MMatrix::Identity();
+                    Eikonal::SimplexData<DIMENSION> simplex{base, M};
+                    Eikonal::solveEikonalLocalProblem<DIMENSION> solver{std::move(simplex),
+                                                                        values};
+                    auto sol = solver();
+                    //if no descent direction or no convergence kill the process
+                    if (sol.status != 0) {
+                        printf("error on convergence");
+                        return;
+                    }
+                    auto newU = sol.value;
+                    if (newU < U[point]) {
+                        U[point] = newU;
+                        //add point to L
 #pragma omp atomic
-                    next_L.push_back(k);
+                        next_L.push_back(point);
+                    }
                 }
             }
-
         }
 
         L = std::move(next_L);

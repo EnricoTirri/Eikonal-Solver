@@ -4,12 +4,14 @@
 
 #ifndef EIKONEL_TEST_POINTSEDGE_H
 #define EIKONEL_TEST_POINTSEDGE_H
-#define PHDIM 2
+
 
 #include <Eigen/Core>
 #include <vector>
 
-typedef Eigen::Matrix<double, PHDIM, 1> Point;
+typedef Eigen::Matrix<double, DIMENSION, 1> Point;
+typedef std::array<Point, DIMENSION + 1> mesh_element;
+
 //now we will implement this algorithm Fast iterative method (X,L)
 //define hash function for Point
 namespace std {
@@ -39,8 +41,9 @@ typedef struct {
 
 class [[maybe_unused]] PointsEdge {
 public:
-    std::vector<Point> adjacentList;
+    std::vector<mesh_element *> adjacentList;
     std::unordered_map<Point, n_range> index;
+    std::vector<mesh_element> mesh;
 };
 
 

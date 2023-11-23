@@ -3,6 +3,7 @@
 //
 #include <fstream>
 #include <vector>
+#include <array>
 #include <hash_map>
 #include "VtkParser.hpp"
 #include <iostream>

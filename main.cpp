@@ -54,6 +54,7 @@ Both class of methods rely on the solution of a local problem, which is an optim
 #include <Eigen/Core>
 #include <PointsEdge.h>
 
+#define MAXFLOAT 3e20
 //now we will implement this algorithm Fast iterative method (X,L)
 //define hash function for Point
 
@@ -85,7 +86,7 @@ void FIM(std::unordered_map<Point, double> &U, std::vector<Point> X, std::vector
     //2. Update points in L
     while (!L.empty()) {
         std::vector<Point> next_L;
-#pragma omp parallel for
+#pragma omp parallel for//matbe task would be better
         for (const auto &i: L) {
             //take time value of point p
             double p = U[i];
@@ -98,13 +99,11 @@ void FIM(std::unordered_map<Point, double> &U, std::vector<Point> X, std::vector
                 neighbors.push_back(static_cast<mesh_element>(*data.adjacentList[j]));
             }
 
-
+            //with task maybe we can parallelize this
             for (auto m_element: neighbors) {
                 for (auto &point: m_element) {
                     if (point == i) continue;
                     //if point in L continue
-                    if (std::find(L.begin(), L.end(), point) == L.end()) continue;
-
                     //solve local problem with this point as unknown and the others as base
                     std::array<Point, DIMENSION + 1> base;
                     std::size_t k = 0;
@@ -189,14 +188,15 @@ int main() {
     std::vector<Point> L;
     std::vector<Point> X;
     Point start1, start2, start3, start4;
-    start1 << 9.0, 12.0;
+    start1 << 0.0, 0.0;
     X.push_back(start1);
     time_t start = clock();
     FIM(U, X, L, pointsEdge);
     time_t end = clock();
     printf("time elapsed: %f\n", (double) (end - start) / CLOCKS_PER_SEC);
     printf("end FIM\n");
-
+    start1 << 0.5, 0.3;
+    printf("U[%f,%f] = %f\n", start1[0], start1[1], U[start1]);
 
     std::unordered_map<Point,int> point_index;
     std::vector<std::array<double,3>> points;

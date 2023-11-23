@@ -149,21 +149,6 @@ int main() {
     VtkParser parser;
     parser.open("testmesh.vtk");
 
-    //open file
-    FILE *fp;
-    fp = fopen("test1.txt", "r");
-    if (fp == NULL) {
-        printf("Test file not found");
-        return 1;
-    }
-
-    //read # points
-    int n_points;
-    fscanf(fp, "%d", &n_points);
-    //read # edges
-    int n_edges;
-    fscanf(fp, "%d", &n_edges);
-
     //support structure for parsing file
     std::unordered_map<Point, std::vector<mesh_element>> readed;
 
@@ -213,7 +198,35 @@ int main() {
     printf("end FIM\n");
 
 
+    std::unordered_map<Point,int> point_index;
+    std::vector<std::array<double,3>> points;
+    int i = 0;
+    for(const auto& pair : pointsEdge.index){
+        point_index[pair.first] = i;
+        points.push_back({pair.first[0], pair.first[1], 0});
+        ++i;
+    }
 
+    std::vector<std::vector<int>> cells;
+    for(const auto& tri_points : pointsEdge.mesh){
+        std::vector<int> t_cell;
+        for(auto p : tri_points)
+            t_cell.emplace_back(point_index[p]);
+        cells.emplace_back(t_cell);
+    }
+
+    std::vector<std::vector<double>> points_value;
+    for(auto pair : pointsEdge.index){
+        std::vector<double> c_temp;
+        c_temp.emplace_back(U[pair.first]);
+        points_value.emplace_back(c_temp);
+    }
+
+    std::vector<std::vector<double>> cell_value;
+
+    parser.loadTriangular(points, cells, points_value, cell_value);
+
+    parser.save("outoutout.vtk");
 
     return 0;
 }

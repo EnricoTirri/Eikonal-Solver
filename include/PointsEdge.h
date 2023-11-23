@@ -33,8 +33,6 @@ namespace std {
             hashed = hash<double>()(k[0]) ^ (hash<double>()(k[1]) + 0x9e3779b9 + (hashed << 6) + (hashed >> 2))
        ^ (hash<double>()(k[2]) + 0x9e3779b9 + (hashed << 6) + (hashed >> 2));
 #endif
-
-
             return hashed;
         }
     };
@@ -43,7 +41,7 @@ typedef struct {
     std::size_t start, end;
 } n_range;
 
-class [[maybe_unused]] PointsEdge {
+class PointsEdge {
 public:
     std::vector<mesh_element *> adjacentList;
     std::unordered_map<Point, n_range> index;

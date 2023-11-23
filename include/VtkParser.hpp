@@ -20,12 +20,12 @@ public:
 
 class VtkCell{
 public:
-    u_int8_t type;
+    int type;
     std::vector<double> data;
     std::vector<int> point_ids;
     VtkCell() : type(-1){};
-    VtkCell(u_int8_t type, std::vector<int> point_ids) : type(type) { this->point_ids = std::move(point_ids); }
-    VtkCell(u_int8_t type, std::vector<int> point_ids, std::vector<double> data) : VtkCell(type,std::move(point_ids)){
+    VtkCell(int type, std::vector<int> point_ids) : type(type) { this->point_ids = std::move(point_ids); }
+    VtkCell(int type, std::vector<int> point_ids, std::vector<double> data) : VtkCell(type,std::move(point_ids)){
         this->data = std::move(data);
     }
 };
@@ -58,10 +58,10 @@ public:
         dataset_type = "";
     }
 
-    void loadTriangular(const std::vector<double[3]>& points,
+    void loadTriangular(const std::vector<std::array<double,3>>& points,
               const std::vector<std::vector<int>>& cells,
-              std::vector<std::vector<double>> point_data,
-              std::vector<std::vector<double>> cell_data);
+              const std::vector<std::vector<double>>& point_data,
+              const std::vector<std::vector<double>>& cell_data);
 
     void open(std::string const &filename);
 

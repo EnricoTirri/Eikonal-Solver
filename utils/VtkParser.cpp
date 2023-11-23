@@ -79,7 +79,7 @@ void VtkParser::ascii_parser(std::ifstream *in) {
             *in >> n_cells;
 
             for(int i = 0; i<n_cells; ++i){
-                u_int8_t type;
+                int type;
                 *in >> type;
 
                 cells[i].type = type;
@@ -89,6 +89,7 @@ void VtkParser::ascii_parser(std::ifstream *in) {
     }
     status = 1;
 }
+
 
 void VtkParser::save(const string &filename) {
     if(status != 1){
@@ -105,18 +106,18 @@ void VtkParser::save(const string &filename) {
     out << endl;
 
     out << "POINTS " << points.size() << " float" <<endl;
-    for(auto point : points){
+    for(const auto& point : points){
         out << point.x << " " << point.y << " "<< point.z << endl;
     }
     out << endl;
 
     int datasize = 0;
-    for(auto cell : cells){
+    for(const auto& cell : cells){
         ++datasize;
         datasize += cell.point_ids.size();
     }
     out << "CELLS " << cells.size() << " " << datasize << endl;
-    for(auto cell : cells){
+    for(const auto& cell : cells){
         out << cell.point_ids.size();
         for(auto id : cell.point_ids){
             out << " " << id;
@@ -126,26 +127,50 @@ void VtkParser::save(const string &filename) {
     out << endl;
 
     out << "CELL_TYPES " << cells.size() << endl;
-    for(auto cell : cells){
+    for(const auto& cell : cells){
         out << cell.type << endl;
     }
+    out << endl;
+
+
+
+    out << "POINT_DATA " << points.size() << endl;
+    out << "SCALARS points_table float 1" << endl;
+    out << "LOOKUP_TABLE points_table" << endl;
+    for(const auto& point : points){
+        for(auto value : point.data)
+            out << " " << value;
+        out << endl;
+    }
+    out << endl;
+
+//    out << "CELL_DATA " << cells.size() << endl;
+//    out << "SCALARS cells_table float 1" << endl;
+//    out << "LOOKUP_TABLE cells_table" << endl;
+//    for(const auto& cell : cells){
+//        for(auto value : cell.data)
+//            out << " " << value;
+//        out << endl;
+//    }
 }
 
-void VtkParser::loadTriangular(const std::vector<double[3]>& new_points, const std::vector<std::vector<int>>& new_cells,
-                     std::vector<std::vector<double>> point_data, std::vector<std::vector<double>> cell_data) {
+void VtkParser::loadTriangular(const std::vector<std::array<double,3>>& new_points, const std::vector<std::vector<int>>& new_cells,
+                     const std::vector<std::vector<double>>& point_data, const std::vector<std::vector<double>>& cell_data) {
     status = 0;
     points.clear();
     cells.clear();
-    auto data = point_data.begin();
-    for(const auto& temp_p : new_points){
-        points.emplace_back(temp_p[0], temp_p[1], temp_p[2],*data);
-        ++data;
+    for(int i = 0; i<new_points.size();++i){
+        std::vector<double> data;
+        if(i<point_data.size())
+            data = point_data[i];
+        points.emplace_back(new_points[i][0], new_points[i][1], new_points[i][2], data);
     }
 
-    data = cell_data.begin();
-    for(const auto& temp_c : new_cells){
-        cells.emplace_back(5, temp_c, *data);
-        ++data;
+    for(int i = 0; i<new_cells.size();++i){
+        std::vector<double> data;
+        if(i<cell_data.size())
+            data = cell_data[i];
+        cells.emplace_back(5,new_cells[i],data);
     }
 
     dataset_type = "UNSTRUCTURED_GRID";

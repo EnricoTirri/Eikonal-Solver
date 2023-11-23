@@ -184,41 +184,26 @@ int main() {
             i++;
         }
         pointsEdge.mesh.push_back(m_element);
-
     }
-    /*  //parsing function
-      while (!feof(fp)) {
-          Point p1, p2;
+    size_t k = 0;
+    size_t prev = 0;
+    for (auto &i: readed) {
+        if (k == 0)
+            pointsEdge.index[i.first].start = 0;
+        else
+            pointsEdge.index[i.first].start = prev;
 
-          (void) fscanf(fp, "%lf,%lf %lf,%lf", &p1[0], &p1[1], &p2[0], &p2[1]);
-          readed[p1].push_back(p2);
-          readed[p2].push_back(p1);
-      }*/
-    //remove duplicates in each vector in map
-//    for (auto &i: readed) {
-//        std::sort(i.second.begin(), i.second.end(), [](Point const &a, Point const &b) {
-//            return (pow(a[0], 2) + pow(a[1], 2)) < (pow(b[0], 2) + pow(b[1], 2));
-//        });
-//        i.second.erase(std::unique(i.second.begin(), i.second.end()), i.second.end());
-//    }
+        for (auto &j: i.second) {
+            pointsEdge.adjacentList.push_back(&j);
+            k++;
+        }
+        pointsEdge.index[i.first].end = k;
+        prev = k;
+    }
+    printf("end parsing\n");
 
-    /* int k = 0;
-     size_t prev = 0;
-     for (auto &i: readed) {
-         if (k == 0)
-             pointsEdge.index[i.first].start = 0;
-         else
-             pointsEdge.index[i.first].start = prev;
 
-         for (const auto &j: i.second) {
-             pointsEdge.adjacentList.push_back(j);
-             k++;
-         }
-         pointsEdge.index[i.first].end = k;
-         prev = k;
-     }
-     printf("end parsing\n");
- */
+
     //let's try it
     std::unordered_map<Point, double> U;
     std::vector<Point> L;
@@ -226,7 +211,12 @@ int main() {
     Point start1, start2, start3, start4;
     start1 << 9.0, 12.0;
     X.push_back(start1);
+    time_t start = clock();
     FIM(U, X, L, pointsEdge);
+    time_t end = clock();
+    printf("time elapsed: %f\n", (double) (end - start) / CLOCKS_PER_SEC);
+    printf("end FIM\n");
+
 
     return 0;
 }

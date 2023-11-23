@@ -188,23 +188,23 @@ int main() {
 //        i.second.erase(std::unique(i.second.begin(), i.second.end()), i.second.end());
 //    }
 
-    int k = 0;
-    size_t prev = 0;
-    for (auto &i: readed) {
-        if (k == 0)
-            pointsEdge.index[i.first].start = 0;
-        else
-            pointsEdge.index[i.first].start = prev;
+    /* int k = 0;
+     size_t prev = 0;
+     for (auto &i: readed) {
+         if (k == 0)
+             pointsEdge.index[i.first].start = 0;
+         else
+             pointsEdge.index[i.first].start = prev;
 
-        for (const auto &j: i.second) {
-            pointsEdge.adjacentList.push_back(j);
-            k++;
-        }
-        pointsEdge.index[i.first].end = k;
-        prev = k;
-    }
-    printf("end parsing\n");
-
+         for (const auto &j: i.second) {
+             pointsEdge.adjacentList.push_back(j);
+             k++;
+         }
+         pointsEdge.index[i.first].end = k;
+         prev = k;
+     }
+     printf("end parsing\n");
+ */
     //let's try it
     std::unordered_map<Point, double> U;
     std::vector<Point> L;

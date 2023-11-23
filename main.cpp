@@ -48,7 +48,6 @@ Both class of methods rely on the solution of a local problem, which is an optim
 - Move to the parallel version using OpenMP
 - Use some triangular/tetrahedral mesh to test the problem. You may use the examples indicated in the generateMesh function of matlab or other tools available on the web (for instance the code triangle for triangular mesh and the code gmsh or tetgen for tetrahedral meshes). For the test you can just choose a portion of the domain boundary where to fix u and then see what happens. You may use paraview to see the solution (particularly useful in 3D)
   */
-#define PHDIM 2
 
 #include <vector>
 #include <Eigen/Core>
@@ -56,7 +55,7 @@ Both class of methods rely on the solution of a local problem, which is an optim
 #include <memory>
 #include "SimplexData.hpp"
 
-typedef Eigen::Matrix<double, PHDIM, 1> Point;
+typedef Eigen::Matrix<double, DIMENSION, 1> Point;
 //now we will implement this algorithm Fast iterative method (X,L)
 //define hash function for Point
 
@@ -77,15 +76,14 @@ void FIM(std::unordered_map<Point, double> &U, std::vector<Point> X, std::vector
 
 #pragma omp parallel for
     for (auto &i: data.index) {
-        U.insert({i.first, 999999});
+        U.insert({i.first, 99999e10});
     }
-    for (auto i: X) {
-        U[i] = 0;
-    }
-
+#pragma omp parallel for
     for (const auto &i: X) {
+        U[i] = 0;
         std::size_t start = data.index[i].start;
         std::size_t end = data.index[i].end;
+#pragma omp SIMD
         for (std::size_t j = start; j < end; j++) {
             L.push_back(data.adjacentList[j]);
         }
@@ -95,15 +93,12 @@ void FIM(std::unordered_map<Point, double> &U, std::vector<Point> X, std::vector
 
     //2. Update points in L
     while (!L.empty()) {
-
         std::vector<Point> next_L;
-
-        for(auto i : L) {
-
+#pragma omp parallel for
+        for (const auto &i: L) {
             //take time value of point p
             double p = U[i];
-
-            //find neighbors of L[i] and get the base (the PHDIM points with the smallest value of U)
+            //find neighbors of L[i] and get the base (the DIMENSION points with the smallest value of U)
             std::vector<Point> neighbors;
             std::size_t start, end;
             start = data.index[i].start;
@@ -115,46 +110,45 @@ void FIM(std::unordered_map<Point, double> &U, std::vector<Point> X, std::vector
             std::sort(neighbors.begin(), neighbors.end(), [&U](Point const &a, Point const &b) {
                 return U[a] < U[b];
             });
-
             //build base
-            std::array<Point, PHDIM + 1> base;
-            int j;
-            for (j = 0; j < PHDIM && j < (neighbors.size() - 1); j++) {
+            std::array<Point, DIMENSION + 1> base;
+            std::size_t j;
+            Point last;
+            for (j = 0; j < DIMENSION && j < (neighbors.size() - 1); j++) {
                 base[j] = neighbors[j];
+                last = neighbors[j];
             }
-            //TODO if j<PHDIM-1 will with infty
-            for (int k = j; k < PHDIM; k++) {
-                Point p;
-                p[0] = -1.;
-                p[1] = -1.;
-                base[k] = p;
+            //if j<DIMENSION-1 the last points will be duplicates
+            for (std::size_t k = j; k < DIMENSION; k++) {
+                base[k] = last;
             }
-            base[PHDIM] = i;
+            base[DIMENSION] = i;
 
             //test M = identity
-            Eikonal::Eikonal_traits<PHDIM>::MMatrix M;
-            M = Eikonal::Eikonal_traits<PHDIM>::MMatrix::Identity();
+            Eikonal::Eikonal_traits<DIMENSION>::MMatrix M;
+            //TODO we need to understand how to construct a useful M matrix with the speeds
+            M = Eikonal::Eikonal_traits<DIMENSION>::MMatrix::Identity();
 
             //build data structure for localproblemsolver
-            Eikonal::SimplexData<PHDIM> simplex{base, M};
-            //TODO: we can improve this  step by directly constructing the SimplexData object but for niw this will do
+            Eikonal::SimplexData<DIMENSION> simplex{base, M};
 
-            using VectorExt = Eikonal::Eikonal_traits<PHDIM>::VectorExt;
+            using VectorExt = Eikonal::Eikonal_traits<DIMENSION>::VectorExt;
             VectorExt values;
-            //init values size to PHDIM
-            values.resize(PHDIM);
+            //init values size to DIMENSION
+            values.resize(DIMENSION);
             //value will be the value of U at the base points - the last one
             int j2;
+            double last_v;
             for (j2 = 0; j2 < j; j2++) {
                 values[j2] = U[base[j2]];
+                last_v = values[j2];
             }
-            for (int k = j2; k < PHDIM; k++) {
-                //m
-                values[k] = 999999;
+            for (std::size_t k = j2; k < DIMENSION; k++) {
+                values[k] = last_v;
             }
 
 
-            Eikonal::solveEikonalLocalProblem<PHDIM> solver{std::move(simplex),
+            Eikonal::solveEikonalLocalProblem<DIMENSION> solver{std::move(simplex),
                                                             values};//TODO: edit local solver to ignore value negative or to allow infty
             auto sol = solver();
             //if no descent direction or no convergence kill the process
@@ -169,15 +163,20 @@ void FIM(std::unordered_map<Point, double> &U, std::vector<Point> X, std::vector
             //if the new value is smaller than the old one update it
             if (newU < p) {
                 U[i] = newU;
-                //TODO: for each neighbor of L[i] check if the propagation would improve time, if so add it to L
-                //maybe we don't need to check because we are already doing it in the while loop ? not sure
+                /*TODO: for each neighbor of L[i] check if the propagation would improve time, if so add it to L
+                 * maybe we don't need to check because we are already doing it in the while loop ? not sure
+                 * FOR NOW IT SEAMS TO WORK
+                 */
 
-                for (auto k: neighbors)
+                for (const auto &k: neighbors) {
+#pragma omp atomic
                     next_L.push_back(k);
+                }
             }
 
         }
-        L = next_L;
+
+        L = std::move(next_L);
     }
 }
 
@@ -221,7 +220,6 @@ int main() {
 //        });
 //        i.second.erase(std::unique(i.second.begin(), i.second.end()), i.second.end());
 //    }
-
     int k = 0;
     size_t prev = 0;
     for (auto &i: readed) {
@@ -246,7 +244,7 @@ int main() {
     std::vector<Point> L;
     std::vector<Point> X;
     Point start;
-    start << 8.0, 8.0;
+    start << 0.0, 0.0;
     X.push_back(start);
     FIM(U, X, L, pointsEdge);
 

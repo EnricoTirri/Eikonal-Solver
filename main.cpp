@@ -148,9 +148,12 @@ void FIM(std::unordered_map<Point, double> &U, std::vector<Point> X, std::vector
 int main() {
 
     VtkParser parser;
-    parser.open("out.vtk");
-
+    parser.open("testmesh.vtk");
     parser.save("outtest.vtk");
+
+
+
+
     //open file
     FILE *fp;
     fp = fopen("test1.txt", "r");
@@ -167,19 +170,30 @@ int main() {
     fscanf(fp, "%d", &n_edges);
 
     //support structure for parsing file
-    std::unordered_map<Point, std::vector<Point>> readed;
+    std::unordered_map<Point, std::vector<mesh_element>> readed;
 
     //final structure
     PointsEdge pointsEdge;
 
-    //parsing function
-    while (!feof(fp)) {
-        Point p1, p2;
+    for (const auto &cell: parser.cells) {
+        mesh_element m_element;
+        int i = 0;
+        for (auto point: cell.point_ids) {
+            m_element[i] = Point{parser.points[point].x, parser.points[point].y};
+            readed[m_element[i]].push_back(m_element);
+            i++;
+        }
+        pointsEdge.mesh.push_back(m_element);
 
-        (void) fscanf(fp, "%lf,%lf %lf,%lf", &p1[0], &p1[1], &p2[0], &p2[1]);
-        readed[p1].push_back(p2);
-        readed[p2].push_back(p1);
     }
+    /*  //parsing function
+      while (!feof(fp)) {
+          Point p1, p2;
+
+          (void) fscanf(fp, "%lf,%lf %lf,%lf", &p1[0], &p1[1], &p2[0], &p2[1]);
+          readed[p1].push_back(p2);
+          readed[p2].push_back(p1);
+      }*/
     //remove duplicates in each vector in map
 //    for (auto &i: readed) {
 //        std::sort(i.second.begin(), i.second.end(), [](Point const &a, Point const &b) {

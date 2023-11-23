@@ -5,6 +5,7 @@
 #include <vector>
 #include <hash_map>
 #include "VtkParser.hpp"
+#include <iostream>
 
 using namespace std;
 
@@ -17,8 +18,12 @@ void VtkParser::open(const std::string &filename) {
     getline(in, description);
     getline(in, filetype);
 
-    if(filetype!="ASCII")
+    if (filetype != "ASCII") {
+        std::cout << "error wrong file type" << std::endl;
         return;
+
+    }
+
 
     ascii_parser(&in);
 }

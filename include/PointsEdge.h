@@ -4,7 +4,9 @@
 
 #ifndef EIKONEL_TEST_POINTSEDGE_H
 #define EIKONEL_TEST_POINTSEDGE_H
-
+#ifndef DIMENSION
+#define DIMENSION 2
+#endif
 
 #include <Eigen/Core>
 #include <vector>
@@ -24,13 +26,15 @@ namespace std {
             // Compute individual hash values for first,
             // second and third and combine them using XOR
             // and bit shifting:
-            std::size_t hashed;
-#if PHDIM == 2
-            hashed = (hash<double>()(k[0])
-                      ^ (hash<double>()(k[1]) << 1)) >> 1;
+            std::size_t hashed = 0;
+#if DIMENSION == 2
+            hashed = hash<double>()(k[0]) ^ (hash<double>()(k[1]) + 0x9e3779b9 + (hashed << 6) + (hashed >> 2));
 #else
-            hashed = ((hash<double>()(k[0]) ^ (hash<double>()(k[1]) << 1)) ^ (hash<double>()(k[2]) << 2)>>2);
+            hashed = hash<double>()(k[0]) ^ (hash<double>()(k[1]) + 0x9e3779b9 + (hashed << 6) + (hashed >> 2))
+       ^ (hash<double>()(k[2]) + 0x9e3779b9 + (hashed << 6) + (hashed >> 2));
 #endif
+
+
             return hashed;
         }
     };

@@ -29,7 +29,7 @@ constexpr std::size_t PHDIM=2;
     Eikonal::SimplexData<PHDIM> simplex{{p1,p2,p3},M};
 
     Eikonal::solveEikonalLocalProblem<PHDIM> solver{simplex,values};
-    auto sol = solver();
+    auto2 sol = solver();
     std::cout<<"Solution="<<sol.value<<" lambda:"<<sol.lambda.transpose()<<" status:"<<sol.status<<"\n";
 #else
     constexpr std::size_t PHDIM=3;

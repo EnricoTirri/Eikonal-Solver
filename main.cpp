@@ -6,74 +6,35 @@
 #include <cmath>
 #include "VtkParser.hpp"
 
-//subset simbol: ⊂
+#ifndef TYPE
+#define TYPE 2
+#endif
 
-/*
-  An eikonal equation is a non-linear first-order partial differential equation that is encountered in problems of wave propagation or in Hamiltonian system. It may be used to computer the continuos shortest path (geodesic) between points, electromagnetic potential, the arrival time of an acoustic wave, etc.
-In most generic term the problem is: find the function u that satisfies an equation of the type
-
-H(x,∇u(x))=1 , x∈Ω
-u(x)=g(x) , x∈Γ⊂∂Ω
-
-In most cases we have
-H(x,∇u(x))=|∇u(x)|_M=sqrt(∇u(x)^T M(x) ∇u(x)),
-
-where M is a symmetric positive definite function. In the simplest cases , so the problem reads simply
- |∇u|=1/c, x∈Ω
- u(x)=g(x) , x∈Γ⊂∂Ω
-and c represents the celerity of the wave (often taken equal to 1). If we exclude techniques based on a regularization of the problem, we may consider two main classes of algorithms operating on a mesh covering the domain
-    1. Fast marching methods. Developed originally by J. Sethian, is a special case of a level-set method. An important feature is that at each step of the algorithm the solution is updated considering among a set of “active nodes” the one which has the smallest value of u. In this way the causality principle is always satisfied (if we interpret u as the arrival time of a wave, the causality principle corresponds to the fact that the past cannot be influenced by the future).
-    2. Fast sweeping methods. They can be thought as a sort of non linear Gauss-Siedel iteration, where the solution is evolved in an iterative fashion until the changes between two successive iterate is smaller than a given tolerance, or other criterions are met.
-*/
-/*^^
-
-
-In most cases we have
-
-
-
-where M is a symmetric positive definite function. In the simplest cases , so the problem reads simply
-
-
-and c represents the celerity of the wave (often taken equal to 1). If we exclude techniques based on a regularization of the problem, we may consider two main classes of algorithms operating on a mesh covering the domain
-    1. Fast marching methods. Developed originally by J. Sethian, is a special case of a level-set method. An important feature is that at each step of the algorithm the solution is updated considering among a set of “active nodes” the one which has the smallest value of u. In this way the causality principle is always satisfied (if we interpret u as the arrival time of a wave, the causality principle corresponds to the fact that the past cannot be influenced by the future).
-    2. Fast sweeping methods. They can be thought as a sort of non linear Gauss-Siedel iteration, where the solution is evolved in an iterative fashion until the changes between two successive iterate is smaller than a given tolerance, or other criterions are met.
-    3.
-Fast marching methods have the advantage of having the solution computed after a number of steps equal to the mesh nodes, but are more difficult to parallelise than Fast sweeping type methods since the each update requires to find the active node with smallest value. They have both been developed originally for regular Cartesian meshes, but later extended to triangular and tetrahedral grids.
-
-Both class of methods rely on the solution of a local problem, which is an optimization problem on a single mesh element. In the given literature the local problem is solved exactly, but the solution requires a sufficiently regular grid, and needs to solve a non-linear problem which is (particularly in 3D) rather nasty. For this hands-on, I suggest to solve the local problem with an optimization algorithm using the code contained in LocalProblem/,  based on modified version of the LineSearch Example of the course. The file solveEikonalProblem.cpp contains the function to use, and main_eikonal.cpp contains an example.
-
- */
-/* What to do?
- * - Implement the algorithm described in the two references by Z. Fu et al. indicated below. Start with a scalar version. I will suggest to start with triangular meshes on a plane and tetrahedra (the algorithm si basically the same). Let alone the case of triangulated surfaces for the start. This way you can use for the Local Problem directly the solver contained in the LocalProblem/ folder.
-- Move to the parallel version using OpenMP
-- Use some triangular/tetrahedral mesh to test the problem. You may use the examples indicated in the generateMesh function of matlab or other tools available on the web (for instance the code triangle for triangular mesh and the code gmsh or tetgen for tetrahedral meshes). For the test you can just choose a portion of the domain boundary where to fix u and then see what happens. You may use paraview to see the solution (particularly useful in 3D)
-  */
 
 #include <vector>
 #include <Eigen/Core>
 #include <PointsEdge.h>
 
-#define MAXFLOAT 3e20
+#define MAXFLOAT 900000
 //now we will implement this algorithm Fast iterative method (X,L)
 //define hash function for Point
 
 
-double solveQuadratic(double a, double b, double c){
+/*double solveQuadratic(double a, double b, double c){
     double u = c + 1;
     if (u <= b) return u;
     u = (b+c+std::sqrt(-(b*b) - (c*c) + 2*b*c +2))/2;
     if(u <= a) return u;
     u = (2*(a+b+c) + std::sqrt(4*(a+b+c)*(a+b+c) - 12*(a*a + b*b + c*c -1)))/6;
     return u;
-}
+}*/
 
 //X will be the starting point from witch the wave will propagate, L is the active list
-void FIM(std::unordered_map<Point, double> &U, std::vector<Point> X, std::vector<Point> L, PointsEdge &data) {
+void FIM(std::unordered_map<Point, double> &U, std::vector<Point> X, std::vector<Point> L, PointsEdge &data, FILE *fp) {
 
     U.reserve(data.index.size());
 
-#pragma omp parallel for
+//#pragma omp parallel for
     for (auto &i: data.index) {
         U.insert({i.first, MAXFLOAT});
     }
@@ -85,7 +46,8 @@ void FIM(std::unordered_map<Point, double> &U, std::vector<Point> X, std::vector
     //2. Update points in L
     while (!L.empty()) {
         std::vector<Point> next_L;
-#pragma omp parallel for//matbe task would be better
+        next_L.clear();
+//#pragma omp parallel for//matbe task would be better
         for (const auto &i: L) {
             //take time value of point p
             double p = U[i];
@@ -99,12 +61,20 @@ void FIM(std::unordered_map<Point, double> &U, std::vector<Point> X, std::vector
             }
 
             //with task maybe we can parallelize this
-            for (auto m_element: neighbors) {
+            for (const auto &m_element: neighbors) {
                 for (auto &point: m_element) {
                     if (point == i) continue;
                     //if point in L continue
                     //solve local problem with this point as unknown and the others as base
                     std::array<Point, DIMENSION + 1> base;
+                    if (point[0] == 2. && point[1] == 2) {
+                        for (int j = 0; j < DIMENSION + 1; ++j) {
+                            printf("x: %f y: %f \t U: %f\n", m_element[j][0], m_element[j][1], U[m_element[j]]);
+                        }
+
+                        printf("found point\n");
+                    }
+
                     std::size_t k = 0;
                     Eikonal::Eikonal_traits<DIMENSION>::VectorExt values;
                     for (std::size_t j = 0; j < DIMENSION + 1; j++) {
@@ -112,32 +82,68 @@ void FIM(std::unordered_map<Point, double> &U, std::vector<Point> X, std::vector
                             base[DIMENSION] = point;
                         } else {
                             base[k] = m_element[j];
-                            values[static_cast<int>(k)] = U[m_element[j]];
+//                            values[static_cast<int>(k)] = U[m_element[j]];
                             k++;
                         }
                     }
+                    for (int iter = 0; iter < DIMENSION; iter++) {
+                        values[iter] = U[base[iter]];
+                    }
+
                     Eikonal::Eikonal_traits<DIMENSION>::MMatrix M;
-                    M = Eikonal::Eikonal_traits<DIMENSION>::MMatrix::Identity();
+                    M << 1.0, 0.0,
+                            0.0, 1.0;
+//                    printf("base: ");
+//                    for (int j = 0; j < DIMENSION +1; ++j) {
+//                        printf("x: %f y: %f \t",base[j][0],base[j][1]);
+//                    }
+//                    printf("\n while examining point x: %f y:%f\n",point[0],point[1]);
                     Eikonal::SimplexData<DIMENSION> simplex{base, M};
                     Eikonal::solveEikonalLocalProblem<DIMENSION> solver{std::move(simplex),
                                                                         values};
                     auto sol = solver();
                     //if no descent direction or no convergence kill the process
                     if (sol.status != 0) {
-                        printf("error on convergence");
+                        printf("error on convergence\n");
                         return;
                     }
                     auto newU = sol.value;
+/*
+                    double b=-1;
+                    double c=-1;
+                    for(Point i2 : base)
+                    {
+                        if(i2!=point)
+                        {
+                            if (c<0)
+                                c=U[i2];
+                            else
+                                b=U[i2];
+                        }
+                    }
+                    auto newU2 = solveQuadratic(99,b,c);
+                    if (abs(newU2-newU)>0.1)
+                    {
+                       // printf("difference local %f, quad: %f old: %f\n",newU,newU2,U[point]);
+                    }
+                    newU = newU2;*/
                     if (newU < U[point]) {
                         U[point] = newU;
-                        //add point to L
-#pragma omp atomic
+                        // #pragma omp atomic
                         next_L.push_back(point);
                     }
                 }
             }
         }
-
+        //remove duplicates from next_L
+        std::sort(next_L.begin(), next_L.end(), [](const Point &a, const Point &b) {
+            return a[0] * 1000 + a[1] < b[0] * 1000 + b[1];
+        });
+        next_L.erase(std::unique(next_L.begin(), next_L.end()), next_L.end());
+        for (auto &i: L) {
+            fprintf(fp, "%f %f %f\n", i[0], i[1], U[i]);
+        }
+        fprintf(fp, "end queue\n");
         L = std::move(next_L);
     }
 }
@@ -192,13 +198,14 @@ int main() {
     std::unordered_map<Point, double> U;
     std::vector<Point> L;
     std::vector<Point> X;
-    Point start1, start2, start3, start4;
-    start1 << 0.0, 0.0;
-    start2 << 1.0, 1.0;
-    X.push_back(start1);
-    X.push_back(start2);
+
+    X.emplace_back(0, 3);
+    X.emplace_back(10, 3);
+    X.emplace_back(0, 6);
+    X.emplace_back(10, 6);
     time_t start = clock();
-    FIM(U, X, L, pointsEdge);
+    FILE *fp = fopen("outL.txt", "w");
+    FIM(U, X, L, pointsEdge, fp);
     time_t end = clock();
     printf("time elapsed: %f\n", (double) (end - start) / CLOCKS_PER_SEC);
     printf("end FIM\n");

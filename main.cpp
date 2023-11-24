@@ -82,7 +82,6 @@ void FIM(std::unordered_map<Point, double> &U, std::vector<Point> X, std::vector
         L.push_back(i);
     }
 
-
     //2. Update points in L
     while (!L.empty()) {
         std::vector<Point> next_L;
@@ -154,16 +153,22 @@ int main() {
     //final structure
     PointsEdge pointsEdge;
 
-    for (const auto &cell: parser.cells) {
-        mesh_element m_element;
-        int i = 0;
-        for (auto point: cell.point_ids) {
-            m_element[i] = Point{parser.points[point].x, parser.points[point].y};
-            readed[m_element[i]].push_back(m_element);
-            i++;
-        }
-        pointsEdge.mesh.push_back(m_element);
+
+    std::vector<mesh_element> temp_mesh_list;
+    for(auto cell : parser.cells){
+        Point a = Point {parser.points[cell.point_ids[0]].x,parser.points[cell.point_ids[0]].y};
+        Point b = Point {parser.points[cell.point_ids[1]].x,parser.points[cell.point_ids[1]].y};
+        Point c = Point {parser.points[cell.point_ids[2]].x,parser.points[cell.point_ids[2]].y};
+        temp_mesh_list.emplace_back(mesh_element{a, b, c});
     }
+
+    for(auto mesh : temp_mesh_list){
+        readed[mesh[0]].emplace_back(mesh);
+        readed[mesh[1]].emplace_back(mesh);
+        readed[mesh[2]].emplace_back(mesh);
+        pointsEdge.mesh.emplace_back(mesh);
+    }
+
     size_t k = 0;
     size_t prev = 0;
     for (auto &i: readed) {
@@ -189,14 +194,15 @@ int main() {
     std::vector<Point> X;
     Point start1, start2, start3, start4;
     start1 << 0.0, 0.0;
+    start2 << 1.0, 1.0;
     X.push_back(start1);
+    X.push_back(start2);
     time_t start = clock();
     FIM(U, X, L, pointsEdge);
     time_t end = clock();
     printf("time elapsed: %f\n", (double) (end - start) / CLOCKS_PER_SEC);
     printf("end FIM\n");
-    start1 << 0.5, 0.3;
-    printf("U[%f,%f] = %f\n", start1[0], start1[1], U[start1]);
+
 
     std::unordered_map<Point,int> point_index;
     std::vector<std::array<double,3>> points;
@@ -210,7 +216,7 @@ int main() {
     std::vector<std::vector<int>> cells;
     for(const auto& tri_points : pointsEdge.mesh){
         std::vector<int> t_cell;
-        for(auto p : tri_points)
+        for(auto &p : tri_points)
             t_cell.emplace_back(point_index[p]);
         cells.emplace_back(t_cell);
     }
@@ -226,7 +232,7 @@ int main() {
 
     parser.loadTriangular(points, cells, points_value, cell_value);
 
-    parser.save("outoutout.vtk");
+    parser.save("final_out.vtk");
 
     return 0;
 }

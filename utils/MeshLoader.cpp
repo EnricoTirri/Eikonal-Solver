@@ -71,9 +71,11 @@ int MeshLoader::dump(const Mesh &mesh, VtkParser &parser, const std::unordered_m
 
     std::vector<std::vector<double>> points_value;
     for (const auto& pair: mesh.index) {
-        std::vector<double> c_temp;
-        c_temp.emplace_back(pointsData.at(pair.first));
-        points_value.emplace_back(c_temp);
+        if(pointsData.contains(pair.first)) {
+            std::vector<double> c_temp;
+            c_temp.emplace_back(pointsData.at(pair.first));
+            points_value.emplace_back(c_temp);
+        }
     }
 
     std::vector<std::vector<double>> cell_value;

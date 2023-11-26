@@ -27,7 +27,14 @@
 }*/
 
 //X will be the starting point from witch the wave will propagate, L is the active list
-void FIM(std::unordered_map<Point, double> &U, std::vector<Point> X, std::vector<Point> L, const Mesh &data, FILE *fp) {
+bool FIM(std::unordered_map<Point, double> &U, std::vector<Point> X, std::vector<Point> L, const Mesh &data) {
+
+    for(auto &point : X){
+        if(!data.index.contains(point)){
+            printf("error on initial point: %f %f does not belong to mesh\n", point.x(), point.y());
+            return false;
+        }
+    }
 
     U.reserve(data.index.size());
 
@@ -89,7 +96,7 @@ void FIM(std::unordered_map<Point, double> &U, std::vector<Point> X, std::vector
                     //if no descent direction or no convergence kill the process
                     if (sol.status != 0) {
                         printf("error on convergence\n");
-                        return;
+                        return false;
                     }
                     auto newU = sol.value;
 /*
@@ -125,9 +132,9 @@ void FIM(std::unordered_map<Point, double> &U, std::vector<Point> X, std::vector
         });
         next_L.erase(std::unique(next_L.begin(), next_L.end()), next_L.end());
 
-        fprintf(fp, "end queue\n");
         L = std::move(next_L);
     }
+    return true;
 }
 
 
@@ -137,7 +144,7 @@ int main() {
     std::unordered_map<MeshElement, double> elementData;
 
     VtkParser parser;
-    parser.open("testmesh.vtk");
+    parser.open("smesh.vtk");
 
     if (MeshLoader::load(mesh, parser, pointData, elementData) != 1) {
         printf("unable to load the mesh");
@@ -151,19 +158,19 @@ int main() {
     std::vector<Point> L;
     std::vector<Point> X;
 
-    X.emplace_back(0, 10);
     X.emplace_back(0, 0);
-
-    FILE *fp = fopen("outL.txt", "w");
+    X.emplace_back(21,0);
+    X.emplace_back(10.5,0);
 
     time_t start = clock();
-    FIM(U, X, L, mesh, fp);
+    bool success = FIM(U, X, L, mesh);
     time_t end = clock();
 
-    printf("end FIM, time elapsed: %f\n", (double) (end - start) / CLOCKS_PER_SEC);
+    if(success) {
+        printf("end FIM, time elapsed: %f\n", (double) (end - start) / CLOCKS_PER_SEC);
 
-
-    MeshLoader::dump(mesh, parser, U, elementData);
-    parser.save("final_out.vtk");
+        MeshLoader::dump(mesh, parser, U, elementData);
+        parser.save("final_out.vtk");
+    }
     return 0;
 }

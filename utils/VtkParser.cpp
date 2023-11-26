@@ -53,7 +53,7 @@ void VtkParser::ascii_parser(std::ifstream *in) {
                 *in >> x;
                 *in >> y;
                 *in >> z;
-                points.emplace_back(x * 10, y * 10, z * 10);
+                points.emplace_back(x, y, z);
             }
         }else if(temp == "CELLS"){
             int n_cells;

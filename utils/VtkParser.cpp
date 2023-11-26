@@ -4,7 +4,6 @@
 #include <fstream>
 #include <vector>
 #include <array>
-#include <hash_map>
 #include "VtkParser.hpp"
 #include <iostream>
 
@@ -112,12 +111,12 @@ void VtkParser::save(const string &filename) {
     }
     out << endl;
 
-    int datasize = 0;
+    int cell_number_size = 0;
     for(const auto& cell : cells){
-        ++datasize;
-        datasize += cell.point_ids.size();
+        ++cell_number_size;
+        cell_number_size += cell.point_ids.size();
     }
-    out << "CELLS " << cells.size() << " " << datasize << endl;
+    out << "CELLS " << cells.size() << " " << cell_number_size << endl;
     for(const auto& cell : cells){
         out << cell.point_ids.size();
         for(auto id : cell.point_ids){
@@ -134,28 +133,39 @@ void VtkParser::save(const string &filename) {
     out << endl;
 
 
-
-    out << "POINT_DATA " << points.size() << endl;
-    out << "SCALARS points_table float 1" << endl;
-    out << "LOOKUP_TABLE points_table" << endl;
-    for(const auto& point : points){
-        for(auto value : point.data)
-            out << " " << value;
+    int point_data_size = 0;
+    for(const auto& point: points){
+        if(!point.data.empty()) ++point_data_size;
+    }
+    if(point_data_size!=0) {
+        out << "POINT_DATA " << point_data_size << endl;
+        out << "SCALARS points_table float 1" << endl;
+        out << "LOOKUP_TABLE points_table" << endl;
+        for (const auto &point: points) {
+            for (auto value: point.data)
+                out << " " << value;
+            out << endl;
+        }
         out << endl;
     }
-    out << endl;
 
-//    out << "CELL_DATA " << cells.size() << endl;
-//    out << "SCALARS cells_table float 1" << endl;
-//    out << "LOOKUP_TABLE cells_table" << endl;
-//    for(const auto& cell : cells){
-//        for(auto value : cell.data)
-//            out << " " << value;
-//        out << endl;
-//    }
+    int cell_data_size = 0;
+    for(const auto& cell: cells){
+        if(!cell.data.empty()) ++cell_data_size;
+    }
+    if(cell_data_size>0) {
+        out << "CELL_DATA " << cell_data_size<< endl;
+        out << "SCALARS cells_table float 1" << endl;
+        out << "LOOKUP_TABLE cells_table" << endl;
+        for (const auto &cell: cells) {
+            for (auto value: cell.data)
+                out << " " << value;
+            out << endl;
+        }
+    }
 }
 
-void VtkParser::loadTriangular(const std::vector<std::array<double,3>>& new_points, const std::vector<std::vector<int>>& new_cells,
+void VtkParser::loadMesh(const std::vector<std::array<double,3>>& new_points, const std::vector<std::vector<int>>& new_cells,
                      const std::vector<std::vector<double>>& point_data, const std::vector<std::vector<double>>& cell_data) {
     status = 0;
     points.clear();
@@ -176,7 +186,7 @@ void VtkParser::loadTriangular(const std::vector<std::array<double,3>>& new_poin
 
     dataset_type = "UNSTRUCTURED_GRID";
     header = "# vtk DataFile Version 2.0";
-    description = "triangular mesh loaded from computed data";
+    description = "triangular elements loaded from computed data";
     filetype = "ASCII";
     status = 1;
 }

@@ -36,7 +36,7 @@ public:
     //status of parsing: 1=successful, 0=not successful
     int status;
 
-    //mesh format info
+    //elements format info
     std::string header;
     std::string description;
     std::string filetype;
@@ -58,7 +58,7 @@ public:
         dataset_type = "";
     }
 
-    void loadTriangular(const std::vector<std::array<double,3>>& points,
+    void loadMesh(const std::vector<std::array<double,3>>& points,
               const std::vector<std::vector<int>>& cells,
               const std::vector<std::vector<double>>& point_data,
               const std::vector<std::vector<double>>& cell_data);

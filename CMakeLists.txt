@@ -8,7 +8,7 @@ file(GLOB SOURCES "LocalProblem/*.cpp")
 file(GLOB UTILSOURCES "utils/*.cpp")
 #also add all cpp file in /
 #add all to executable
-add_compile_definitions(DIMENSION=2)
+add_compile_definitions(DIMENSION=3)
 add_executable(eikonel_test main.cpp
         include/PointsEdge.h
         ${SOURCES} ${UTILSOURCES})

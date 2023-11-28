@@ -13,13 +13,7 @@
 
 using namespace Eikonal;
 
-//now we will implement this algorithm Fast iterative method (X,L)
-//define hash function for Point
 
-// Hash composed by:
-//  Compute individual hash values for every,
-//      value and combine them using XOR
-//      and bit shifting:
 namespace std {
     template<>
     struct hash<Eikonal_traits<2u>::Point> {

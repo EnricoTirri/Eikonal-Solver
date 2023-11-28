@@ -10,7 +10,6 @@ file(GLOB UTILSOURCES "utils/*.cpp")
 #add all to executable
 add_compile_definitions(DIMENSION=3)
 add_executable(eikonel_test main.cpp
-        include/PointsEdge.h
         ${SOURCES} ${UTILSOURCES})
 
 target_sources(eikonel_test PRIVATE ${SOURCES} PRIVATE ${UTILSOURCES} include/VtkParser.hpp)

@@ -39,6 +39,8 @@ void VtkParser::ascii_parser(std::ifstream *in) {
         return;
     }
 
+    bool is2DPoint = true;
+
     *in >> temp;
     while(!(*in).eof()){
         if (temp == "POINTS") {
@@ -53,6 +55,7 @@ void VtkParser::ascii_parser(std::ifstream *in) {
                 *in >> x;
                 *in >> y;
                 *in >> z;
+                if(z>0) is2DPoint = false;
                 points.emplace_back(x, y, z);
             }
         }else if(temp == "CELLS"){
@@ -72,6 +75,7 @@ void VtkParser::ascii_parser(std::ifstream *in) {
                     cell.point_ids.emplace_back(id);
                 }
 
+                if(n_points>cell_max_d) cell_max_d = n_points;
                 cells.emplace_back(cell);
             }
         }else if(temp == "CELL_TYPES"){
@@ -87,6 +91,9 @@ void VtkParser::ascii_parser(std::ifstream *in) {
         }
         *in >> temp;
     }
+
+    is2DPoint ? point_max_d = 2 : point_max_d = 3;
+
     status = 1;
 }
 

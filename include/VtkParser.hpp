@@ -34,7 +34,7 @@ public:
 class VtkParser {
 public:
     //status of parsing: 1=successful, 0=not successful
-    int status;
+    int status = 0;
 
     //elements format info
     std::string header;
@@ -49,14 +49,9 @@ public:
     //elements info
     std::vector<VtkCell> cells;
 
-
-    VtkParser(){
-        status = 0;
-        header = "";
-        description = "";
-        filetype = "";
-        dataset_type = "";
-    }
+    //mesh space-dimension info
+    size_t point_max_d = 0;
+    size_t cell_max_d = 0;
 
     void loadMesh(const std::vector<std::array<double,3>>& points,
               const std::vector<std::vector<int>>& cells,

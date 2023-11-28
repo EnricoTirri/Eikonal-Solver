@@ -6,15 +6,25 @@
 #define EIKONEL_TEST_MESHLOADER_H
 
 #include <Mesh.h>
+#include <Eikonal_traits.hpp>
 #include <VtkParser.hpp>
 
-class MeshLoader {
-public:
-    static int load(Mesh &mesh, const VtkParser &parser, std::unordered_map<Point,double>& pointsData,
-                    std::unordered_map<MeshElement,double>& elementData);
+using namespace Eikonal;
+using namespace std;
 
-    static int dump(const Mesh &mesh, VtkParser &parser, const std::unordered_map<Point,double> &pointsData,
-                    const std::unordered_map<MeshElement,double>& elementData);
+template<size_t DIM, size_t MESHSIZE>
+class MeshLoader {
+    typedef MeshElement<DIM,MESHSIZE> M;
+    typedef Eikonal_traits<DIM>::Point P;
+
+public:
+    static int load(Mesh<DIM, MESHSIZE> &mesh, const VtkParser &parser,
+                    unordered_map<P, double> &pointsData,
+                    unordered_map<M, double> &elementData);
+
+    static int dump(const Mesh<DIM,MESHSIZE> &mesh, VtkParser &parser,
+                    const unordered_map<P, double> &pointsData,
+                    const unordered_map<M, double> &elementData);
 };
 
 

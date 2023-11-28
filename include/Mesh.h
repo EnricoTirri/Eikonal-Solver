@@ -4,75 +4,95 @@
 
 #ifndef EIKONEL_TEST_MESH_H
 #define EIKONEL_TEST_MESH_H
-#ifndef DIMENSION
-#define DIMENSION 2
-#define MESHSIZE 3
-#else
-#ifndef MESHSIZE
-#define MESHSIZE 3
-#endif
-#endif
 
 #include <Eigen/Core>
 #include <vector>
 #include <memory>
+#include <Mesh_traits.hpp>
 
-typedef Eigen::Matrix<double, DIMENSION, 1> Point;
-typedef std::array<Point, MESHSIZE> MeshElement;
+
+using namespace Eikonal;
 
 //now we will implement this algorithm Fast iterative method (X,L)
 //define hash function for Point
+
+// Hash composed by:
+//  Compute individual hash values for every,
+//      value and combine them using XOR
+//      and bit shifting:
 namespace std {
     template<>
-    struct hash<Point> {
-        std::size_t operator()(const Point &k) const {
-            using std::size_t;
-            using std::hash;
-            using std::string;
-            // Compute individual hash values for first,
-            // second and third and combine them using XOR
-            // and bit shifting:
-            std::size_t hashed = 0;
-#if DIMENSION == 2
+    struct hash<Eikonal_traits<2u>::Point> {
+        size_t operator()(const Eikonal_traits<2u>::Point &k) {
+            size_t hashed;
             hashed = hash<double>()(k[0]) ^ (hash<double>()(k[1]) + 0x9e3779b9 + (hashed << 6) + (hashed >> 2));
-#else
-            hashed = hash<double>()(k[0]) ^ (hash<double>()(k[1]) + 0x9e3779b9 + (hashed << 6) + (hashed >> 2))
-       ^ (hash<double>()(k[2]) + 0x9e3779b9 + (hashed << 6) + (hashed >> 2));
-#endif
             return hashed;
         }
     };
 
     template<>
-    struct hash<MeshElement> {
-        std::size_t operator()(const MeshElement &k) const {
-            using std::size_t;
-            using std::hash;
-            using std::string;
-            // Compute individual hash values for first,
-            // second and third and combine them using XOR
-            // and bit shifting:
-            std::size_t hashed = 0;
-#if MESHSIZE == 3
-            hashed = hash<Point>()(k[0]) ^ (hash<Point>()(k[1]) + 0x9e3779b9 + (hashed << 6) + (hashed >> 2))
-                     ^ (hash<Point>()(k[2]) + 0x9e3779b9 + (hashed << 6) + (hashed >> 2));
-#else
-            hashed = hash<Point>()(k[0]) ^ (hash<Point>()(k[1]) + 0x9e3779b9 + (hashed << 6) + (hashed >> 2))
-       ^ (hash<Point>()(k[2]) + 0x9e3779b9 + (hashed << 6) + (hashed >> 2)) ^ (hash<Point>()(k[3]) + 0x9e3779b9 + (hashed << 6) + (hashed >> 2));
-#endif
+    struct hash<Eikonal_traits<3u>::Point> {
+        size_t operator()(const Eikonal_traits<3u>::Point &k) const {
+            size_t hashed;
+            hashed = hash<double>()(k[0]) ^ (hash<double>()(k[1]) + 0x9e3779b9 + (hashed << 6) + (hashed >> 2))
+                     ^ (hash<double>()(k[2]) + 0x9e3779b9 + (hashed << 6) + (hashed >> 2));
+
             return hashed;
         }
     };
+
+    template<>
+    struct hash<MeshElement<2u, 3u>> {
+        using Point = Eikonal_traits<2u>::Point;
+
+        size_t operator()(const MeshElement<2u, 3u> &k) const {
+            size_t hashed;
+            hashed = hash<Point>()(k[0]) ^
+                     (hash<Point>()(k[1]) + 0x9e3779b9 + (hashed << 6) + (hashed >> 2))
+                     ^ (hash<Point>()(k[2]) + 0x9e3779b9 + (hashed << 6) + (hashed >> 2));
+
+            return hashed;
+        }
+    };
+
+
+    template<>
+    struct hash<MeshElement<3u, 3u>> {
+        using Point = Eikonal_traits<3u>::Point;
+
+        size_t operator()(const MeshElement<3u, 3u> &k) const {
+            size_t hashed = 0;
+            hashed = hash<Point>()(k[0]) ^ (hash<Point>()(k[1]) + 0x9e3779b9 + (hashed << 6) + (hashed >> 2))
+                     ^ (hash<Point>()(k[2]) + 0x9e3779b9 + (hashed << 6) + (hashed >> 2));
+            return hashed;
+        }
+    };
+
+    template<>
+    struct hash<MeshElement<3u, 4u>> {
+        using Point = Eikonal_traits<3u>::Point;
+
+        size_t operator()(const MeshElement<3u, 4u> &k) const {
+            size_t hashed = 0;
+            hashed = hash<Point>()(k[0]) ^ (hash<Point>()(k[1]) + 0x9e3779b9 + (hashed << 6) + (hashed >> 2))
+                     ^ (hash<Point>()(k[2]) + 0x9e3779b9 + (hashed << 6) + (hashed >> 2)) ^
+                     (hash<Point>()(k[3]) + 0x9e3779b9 + (hashed << 6) + (hashed >> 2));
+            return hashed;
+        }
+    };
+
 }
+
 typedef struct {
-    std::size_t start, end;
+    size_t start, end;
 } range_t;
 
+template<size_t DIM, size_t MESHSIZE>
 class Mesh {
 public:
-    std::vector<MeshElement*> adjacentList;
-    std::unordered_map<Point, range_t> index;
-    std::vector<MeshElement> elements;
+    std::vector<MeshElement<DIM, MESHSIZE> *> adjacentList;
+    std::unordered_map<typename Eikonal_traits<DIM>::Point, range_t> index;
+    std::vector<MeshElement<DIM, MESHSIZE>> elements;
 };
 
 

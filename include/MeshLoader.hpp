@@ -13,11 +13,10 @@ using namespace Eikonal;
 using namespace std;
 
 template<size_t DIM, size_t MESHSIZE>
-class MeshLoader {
+struct MeshLoader {
     typedef MeshElement<DIM,MESHSIZE> M;
     typedef Eikonal_traits<DIM>::Point P;
 
-public:
     static int load(Mesh<DIM, MESHSIZE> &mesh, const VtkParser &parser,
                     unordered_map<P, double> &pointsData, unordered_map<M, double> &elementData) {
         if (parser.status != 1)
@@ -89,7 +88,7 @@ public:
 
         vector<vector<double>> points_value;
         for (const auto &pair: mesh.index) {
-            if (pointsData.contains(pair.first) == true) {
+            if (pointsData.contains(pair.first)) {
                 vector<double> c_temp;
                 c_temp.emplace_back(pointsData.at(pair.first));
                 points_value.emplace_back(c_temp);

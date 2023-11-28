@@ -14,9 +14,7 @@
 //#define DIM 3
 //#define MESH_SIZE 4
 namespace methods {
-    template<std::size_t DIM, std::size_t MESH_SIZE>
-    struct FIM {
-        typedef typename Eikonal::Eikonal_traits<DIM>::Point Point;
+    template<int DIM, int MESH_SIZE>
 
     static bool FIM(std::unordered_map<typename Eikonal_traits<DIM>::Point, double> &U,
                     std::vector<typename Eikonal_traits<DIM>::Point> X,
@@ -52,7 +50,7 @@ namespace methods {
                     //find neighbors of L[i] and get the base (the DIMENSION points with the smallest value of U
                     std::vector<MeshElement<DIM, MESH_SIZE> *> neighbors;
                     std::size_t start, end;
-                    start = data.index3.at(i).start;
+                    start = data.index.at(i).start;
                     end = data.index.at(i).end;
                     for (std::size_t j = start; j < end; j++) {
                         neighbors.push_back(data.adjacentList[j]);

@@ -30,8 +30,9 @@ namespace std {
     struct hash<Eikonal_traits<3u>::Point> {
         size_t operator()(const Eikonal_traits<3u>::Point &k) const {
             size_t hashed;
-            hashed = hash<double>()(k[0]) ^ (hash<double>()(k[1]) + 0x9e3779b9 + (hashed << 6) + (hashed >> 2))
-                     ^ (hash<double>()(k[2]) + 0x9e3779b9 + (hashed << 6) + (hashed >> 2));
+            hashed = hash<double>()(k[0]);
+            hashed ^= (hash<double>()(k[1]) + 0x9e3779b1 + (hashed << 6) + (hashed >> 2));
+            hashed ^= (hash<double>()(k[2]) + 0x9e3779b1 + (hashed << 6) + (hashed >> 2));
 
             return hashed;
         }
@@ -67,7 +68,6 @@ namespace std {
     template<>
     struct hash<MeshElement<3u, 4u>> {
         using Point = Eikonal_traits<3u>::Point;
-
         size_t operator()(const MeshElement<3u, 4u> &k) const {
             size_t hashed = 0;
             hashed = hash<Point>()(k[0]) ^ (hash<Point>()(k[1]) + 0x9e3779b9 + (hashed << 6) + (hashed >> 2))

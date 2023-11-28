@@ -17,12 +17,14 @@ using namespace Eikonal;
 namespace std {
     template<>
     struct hash<Eikonal_traits<2u>::Point> {
-        size_t operator()(const Eikonal_traits<2u>::Point &k) {
+        size_t operator()(const Eikonal_traits<2u>::Point &k) const {
             size_t hashed;
             hashed = hash<double>()(k[0]) ^ (hash<double>()(k[1]) + 0x9e3779b9 + (hashed << 6) + (hashed >> 2));
+
             return hashed;
         }
     };
+
 
     template<>
     struct hash<Eikonal_traits<3u>::Point> {
@@ -81,7 +83,7 @@ typedef struct {
     size_t start, end;
 } range_t;
 
-template<size_t DIM, size_t MESHSIZE>
+template<std::size_t DIM, std::size_t MESHSIZE>
 class Mesh {
 public:
     std::vector<MeshElement<DIM, MESHSIZE> *> adjacentList;

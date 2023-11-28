@@ -8,17 +8,21 @@
 #include "Mesh.h"
 #include "SimplexData.hpp"
 #include "solveEikonalLocalProblem.hpp"
+#include <Eikonal_traits.hpp>
 #include <unordered_map>
 #include <vector>
-
+//#define DIM 3
+//#define MESH_SIZE 4
 namespace methods {
     template<std::size_t DIM, std::size_t MESH_SIZE>
     struct FIM {
         typedef typename Eikonal::Eikonal_traits<DIM>::Point Point;
 
-        bool operator()(std::unordered_map<Point, double> &U, std::vector<Point> X, std::vector<Point> L,
+    static bool FIM(std::unordered_map<typename Eikonal_traits<DIM>::Point, double> &U,
+                    std::vector<typename Eikonal_traits<DIM>::Point> X,
+                    std::vector<typename Eikonal_traits<DIM>::Point> L,
                         const Mesh<DIM, MESH_SIZE> &data) {
-
+        typedef typename Eikonal_traits<DIM>::Point Point;
             for (auto &point: X) {
                 if (!data.index.contains(point)) {
                     printf("error on initial point: %f %f does not belong to mesh\n", point.x(), point.y());
@@ -30,7 +34,7 @@ namespace methods {
 
 //#pragma omp parallel for
             for (const auto &i: data.index) {
-                U.insert({i.first, MAXFLOAT});
+                U[i.first] = MAXFLOAT;
             }
             for (const auto &i: X) {
                 U[i] = 0;
@@ -48,7 +52,7 @@ namespace methods {
                     //find neighbors of L[i] and get the base (the DIMENSION points with the smallest value of U
                     std::vector<MeshElement<DIM, MESH_SIZE> *> neighbors;
                     std::size_t start, end;
-                    start = data.index.at(i).start;
+                    start = data.index3.at(i).start;
                     end = data.index.at(i).end;
                     for (std::size_t j = start; j < end; j++) {
                         neighbors.push_back(data.adjacentList[j]);
@@ -60,25 +64,26 @@ namespace methods {
                             if (point == i) continue;
                             //if point in L continue
                             //solve local problem with this point as unknown and the others as base
-                            std::array<Point, DIMENSION + 1> base;
+                            std::array<Point, MESH_SIZE> base;
 
                             std::size_t k = 0;
-                            Eikonal::Eikonal_traits<DIMENSION>::VectorExt values;
-                            for (std::size_t j = 0; j < DIMENSION + 1; j++) {
+                            typename Eikonal::Eikonal_traits<DIM>::VectorExt values;
+                            for (std::size_t j = 0; j < MESH_SIZE; j++) {
                                 if ((*m_element)[j] == point) {
-                                    base[DIMENSION] = point;
+                                    base[MESH_SIZE - 1] = point;
                                 } else {
                                     base[k] = (*m_element)[j];
                                     k++;
                                 }
                             }
-                            for (int iter = 0; iter < DIMENSION; iter++) {
+                            for (int iter = 0; iter < DIM; iter++) {
                                 values[iter] = U[base[iter]];
                             }
 
-                            Eikonal::Eikonal_traits<DIMENSION>::MMatrix M;
-                            M << 1.0, 0.0,
-                                    0.0, 1.0;
+                            typename Eikonal::Eikonal_traits<DIM>::MMatrix M;
+                            M << 1.0, 0.0, 0.0,
+                                    0.0, 1.0, 0.0,
+                                    0.0, 0.0, 1.0;
                             Eikonal::SimplexData<DIM> simplex{base, M};
                             Eikonal::solveEikonalLocalProblem<DIM> solver{std::move(simplex),
                                                                           values};
@@ -111,7 +116,7 @@ namespace methods {
                             if (newU < U[point]) {
                                 U[point] = newU;
                                 // #pragma omp atomic
-                                next_L.emplace_back(point.x(), point.y());
+                                next_L.push_back(point);
                             }
                         }
                     }
@@ -127,10 +132,11 @@ namespace methods {
             return true;
         }
 
-    };
 
-    template<std::size_t DIM, std::size_t MESH_SIZE>
+    // template<std::size_t DIM, std::size_t MESH_SIZE>
     //!Fast sweeping method
+    template<std::size_t DIM, std::size_t MESH_SIZE>
+
     struct FSM {
         typedef typename Eikonal::Eikonal_traits<DIM>::Point Point;
 

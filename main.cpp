@@ -1,5 +1,6 @@
 #include "LocalProblem/include/SimplexData.hpp"
 #include "LocalProblem/include/solveEikonalLocalProblem.hpp"
+#include "Methods.hpp"
 #include <iostream>
 #include <algorithm>
 #include <VtkParser.hpp>
@@ -31,14 +32,15 @@
 
 
 int main() {
-    Mesh mesh;
+    Mesh<3u, 4u> mesh;
+    using Point = Eikonal_traits<3u>::Point;
     std::unordered_map<Point, double> pointData;
-    std::unordered_map<MeshElement, double> elementData;
+    std::unordered_map<MeshElement<3, 4>, double> elementData;
 
     VtkParser parser;
-    parser.open("smesh.vtk");
+    parser.open("tetramesh.vtk");
 
-    if (MeshLoader::load(mesh, parser, pointData, elementData) != 1) {
+    if (MeshLoader<3, 4>::load(mesh, parser, pointData, elementData) != 1) {
         printf("unable to load the mesh");
         return 1;
     }
@@ -50,18 +52,17 @@ int main() {
     std::vector<Point> L;
     std::vector<Point> X;
 
-    X.emplace_back(0, 0);
-    X.emplace_back(21,0);
-    X.emplace_back(10.5,0);
+    X.emplace_back(0, 0, 0);
 
     time_t start = clock();
-    bool success = FIM(U, X, L, mesh);
+
+    bool success = methods::FIM<3, 4>(U, X, L, mesh);
     time_t end = clock();
 
     if(success) {
         printf("end FIM, time elapsed: %f\n", (double) (end - start) / CLOCKS_PER_SEC);
 
-        MeshLoader::dump(mesh, parser, U, elementData);
+        MeshLoader<3, 4>::dump(mesh, parser, U, elementData);
         parser.save("final_out.vtk");
     }
     return 0;

@@ -53,6 +53,13 @@ int main() {
     std::vector<Point> X;
 
     X.emplace_back(0, 0, 0);
+    X.emplace_back(1, 0, 0);
+    X.emplace_back(0, 1, 0);
+    X.emplace_back(0, 0, 1);
+    X.emplace_back(1, 1, 1);
+    X.emplace_back(1, 0, 1);
+    X.emplace_back(0, 1, 1);
+    X.emplace_back(1, 1, 0);
 
     time_t start = clock();
 

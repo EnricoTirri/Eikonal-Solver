@@ -11,6 +11,8 @@ file(GLOB HPPEADERS "include/*.hpp")
 #also add all cpp file in /
 #add all to executable
 add_compile_definitions(DIMENSION=3)
+#flags
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3 -march=native -ffast-math -funroll-loops")
 add_executable(eikonal_test main.cpp
         ${SOURCES} ${UTILSOURCES})
 

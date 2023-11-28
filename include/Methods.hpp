@@ -13,6 +13,7 @@
 #include <vector>
 //#define DIM 3
 //#define MESH_SIZE 4
+#define MAXF 900000
 namespace methods {
     template<int DIM, int MESH_SIZE>
 
@@ -32,7 +33,7 @@ namespace methods {
 
 //#pragma omp parallel for
             for (const auto &i: data.index) {
-                U[i.first] = MAXFLOAT;
+                U[i.first] = MAXF;
             }
             for (const auto &i: X) {
                 U[i] = 0;
@@ -63,7 +64,6 @@ namespace methods {
                             //if point in L continue
                             //solve local problem with this point as unknown and the others as base
                             std::array<Point, MESH_SIZE> base;
-
                             std::size_t k = 0;
                             typename Eikonal::Eikonal_traits<DIM>::VectorExt values;
                             for (std::size_t j = 0; j < MESH_SIZE; j++) {
@@ -79,6 +79,10 @@ namespace methods {
                             }
 
                             typename Eikonal::Eikonal_traits<DIM>::MMatrix M;
+                            if (DIM == 2)
+                                M << 1.0, 0.0,
+                                        0.0, 1.0;
+                            else if (DIM == 3)
                             M << 1.0, 0.0, 0.0,
                                     0.0, 1.0, 0.0,
                                     0.0, 0.0, 1.0;
@@ -114,16 +118,16 @@ namespace methods {
                             if (newU < U[point]) {
                                 U[point] = newU;
                                 // #pragma omp atomic
-                                next_L.push_back(point);
+                                Point p;
+#pragma unroll
+                                for (int i = 0; i < DIM; i++) {
+                                    p[i] = point[i];
+                                }
+                                next_L.emplace_back(p);
                             }
                         }
                     }
                 }
-                //remove duplicates from next_L
-                std::sort(next_L.begin(), next_L.end(), [](const Point &a, const Point &b) {
-                    return a[0] * 1000 + a[1] < b[0] * 1000 + b[1];
-                });
-                next_L.erase(std::unique(next_L.begin(), next_L.end()), next_L.end());
 
                 L = std::move(next_L);
             }
@@ -153,7 +157,7 @@ namespace methods {
 
 //#pragma omp parallel for
             for (const auto &i: data.index) {
-                U.insert({i.first, MAXFLOAT});
+                U.insert({i.first, MAXF});
             }
             for (const auto &i: X) {
                 U[i] = 0;
@@ -184,7 +188,7 @@ namespace methods {
                 //with task maybe we can parallelize this
                 for (const auto &m_element: neighbors) {
                     for (const Point &point: *m_element) {
-                        if (point == i || U[point] != MAXFLOAT) continue;
+                        if (point == i || U[point] != MAXF) continue;
                         //if point in L continue
                         //solve local problem with this point as unknown and the others as base
                         std::array<Point, DIMENSION + 1> base;

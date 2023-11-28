@@ -14,7 +14,6 @@
 #endif
 #undef DIMENSION
 
-#define MAXFLOAT 900000
 //now we will implement this algorithm Fast iterative method (X,L)
 //define hash function for Point
 
@@ -71,6 +70,20 @@ int main() {
 
         MeshLoader<3, 4>::dump(mesh, parser, U, elementData);
         parser.save("final_out.vtk");
+    } else {
+        printf("FIM failed\n");
+    }
+    //let's try the fast sweeping method
+    start = clock();
+    success = methods::FSM<3, 4>(U, X, L, mesh);
+    end = clock();
+    if (success) {
+        printf("end FSM, time elapsed: %f\n", (double) (end - start) / CLOCKS_PER_SEC);
+
+        MeshLoader<3, 4>::dump(mesh, parser, U, elementData);
+        parser.save("final_outfsm.vtk");
+    } else {
+        printf("FSM failed\n");
     }
     return 0;
 }

@@ -44,9 +44,9 @@ namespace std {
 
         size_t operator()(const MeshElement<2u, 3u> &k) const {
             size_t hashed;
-            hashed = hash<Point>()(k[0]) ^
-                     (hash<Point>()(k[1]) + 0x9e3779b9 + (hashed << 6) + (hashed >> 2))
-                     ^ (hash<Point>()(k[2]) + 0x9e3779b9 + (hashed << 6) + (hashed >> 2));
+            hashed = hash<Point>()(k[0]);
+            hashed ^= (hash<Point>()(k[1]) + 0x9e3779b1 + (hashed << 6) + (hashed >> 2));
+            hashed ^= (hash<Point>()(k[2]) + 0x9e3779b1 + (hashed << 6) + (hashed >> 2));
 
             return hashed;
         }
@@ -59,8 +59,9 @@ namespace std {
 
         size_t operator()(const MeshElement<3u, 3u> &k) const {
             size_t hashed = 0;
-            hashed = hash<Point>()(k[0]) ^ (hash<Point>()(k[1]) + 0x9e3779b9 + (hashed << 6) + (hashed >> 2))
-                     ^ (hash<Point>()(k[2]) + 0x9e3779b9 + (hashed << 6) + (hashed >> 2));
+            hashed = hash<Point>()(k[0]);
+            hashed ^= (hash<Point>()(k[1]) + 0x9e3779b1 + (hashed << 6) + (hashed >> 2));
+            hashed ^= (hash<Point>()(k[2]) + 0x9e3779b1 + (hashed << 6) + (hashed >> 2));
             return hashed;
         }
     };
@@ -70,9 +71,11 @@ namespace std {
         using Point = Eikonal_traits<3u>::Point;
         size_t operator()(const MeshElement<3u, 4u> &k) const {
             size_t hashed = 0;
-            hashed = hash<Point>()(k[0]) ^ (hash<Point>()(k[1]) + 0x9e3779b9 + (hashed << 6) + (hashed >> 2))
-                     ^ (hash<Point>()(k[2]) + 0x9e3779b9 + (hashed << 6) + (hashed >> 2)) ^
-                     (hash<Point>()(k[3]) + 0x9e3779b9 + (hashed << 6) + (hashed >> 2));
+            hashed = hash<Point>()(k[0]);
+            hashed ^= (hash<Point>()(k[1]) + 0x9e3779b1 + (hashed << 6) + (hashed >> 2));
+            hashed ^= (hash<Point>()(k[2]) + 0x9e3779b1 + (hashed << 6) + (hashed >> 2));
+            hashed ^= (hash<Point>()(k[3]) + 0x9e3779b1 + (hashed << 6) + (hashed >> 2));
+
             return hashed;
         }
     };

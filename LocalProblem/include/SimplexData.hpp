@@ -10,7 +10,7 @@
 #include "Eikonal_traits.hpp"
 namespace Eikonal
 {
-template<std::size_t PHDIM>
+    template<std::size_t PHDIM, std::size_t MESH_ELE_SIZE>
   struct SimplexData
   {
 	using AnisotropyM=typename Eikonal_traits<PHDIM>::AnisotropyM;
@@ -19,21 +19,21 @@ template<std::size_t PHDIM>
 
 	//! This constructor just takes of vector that describes the simplex
 
-	  SimplexData(std::array<std::array<double,PHDIM>,PHDIM+1u> const & p,
+      SimplexData(std::array<std::array<double, PHDIM>, MESH_ELE_SIZE> const &p,
 			  AnisotropyM const &M=AnisotropyM::Identity())
 	  {
-		  for (auto i=0u;i<PHDIM+1u;++i)
+          for (auto i = 0u; i < MESH_ELE_SIZE; ++i)
 			  points[i]=Eigen::Map<Point>(const_cast<double*>(p[i].data()));
 		  setup(M);
 	  }
 
-	  SimplexData(std::array<Point,PHDIM+1u> const & p,
+      SimplexData(std::array<Point, MESH_ELE_SIZE> const &p,
 			  AnisotropyM const &M=AnisotropyM::Identity()):
 		  points{p}
 	  {
 		  setup(M);
 	  };
-	  std::array<Point,PHDIM+1u> points;
+      std::array<Point, MESH_ELE_SIZE> points;
 	  MMatrix MM_Matrix;
 	  MMatrix E;
   private:
@@ -48,6 +48,7 @@ template<std::size_t PHDIM>
 		  MM_Matrix=E.transpose()*M*E;
 	  }
   };
+
 }
 
 

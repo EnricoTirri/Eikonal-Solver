@@ -32,7 +32,8 @@ template <std::size_t PHDIM> struct EikonalSolution
  *
  * @tparam PHDIM The physical dimension
  */
-template <std::size_t PHDIM> class solveEikonalLocalProblem
+    template<std::size_t PHDIM, std::size_t MESH_ELEMENT_SIZE>
+    class solveEikonalLocalProblem
 {
 public:
   using Vector = apsc::LineSearch_traits::Vector;
@@ -99,15 +100,15 @@ public:
  		{
  	  optimizationOptions=oop;
  		}
+
 private:
-  Eikonal::Phi<PHDIM>                     my_phi;
+        Eikonal::Phi<PHDIM, MESH_ELEMENT_SIZE> my_phi;
   inline static apsc::LineSearchOptions   lineSearchOptions;
   inline static apsc::OptimizationOptions optimizationOptions;
   inline static std::unique_ptr<apsc::DescentDirectionBase>
     descentDirectionFunction = std::make_unique<apsc::NewtonDirection>();
 };
-#if DIMENSION==2
-extern template class solveEikonalLocalProblem<2u>;
+//extern template class solveEikonalLocalProblem<2u,3u>;
 /*!
  * @brief A function that calls the solution of the local problem
  *
@@ -117,18 +118,20 @@ extern template class solveEikonalLocalProblem<2u>;
  * @param M The anisotropy matrix.
  * @return A structure containing the solution
  */
-EikonalSolution<2u> solveLocalProblem(std::array<std::array<double,2u>,3u> element,
+
+//extern template class solveEikonalLocalProblem<3u,3u>;
+/*EikonalSolution<2u> solveLocalProblem(std::array<std::array<double,2u>,3u> element,
 		Eigen::Matrix<double,2u,1u> values,
-         Eigen::Matrix<double,2u,2u> const & M);
+         Eigen::Matrix<double,2u,2u> const & M);*/
 /*!
  * @brief The version of solveLocalProblem for the standard probelm where M=I (identity)
  *
  * @detail See the documantation of the other version
  */
-EikonalSolution<2u> solveLocalProblemIsotropic(std::array<std::array<double,2u>,3u> element,
-		 Eigen::Matrix<double,2u,1u> values);
-#else
-extern template class solveEikonalLocalProblem<3u>;
+/*EikonalSolution<2u> solveLocalProblemIsotropic(std::array<std::array<double,2u>,3u> element,
+		 Eigen::Matrix<double,2u,1u> values);*/
+
+//extern template class solveEikonalLocalProblem<3u,4u>;
 /*!
  * @brief A function that calls the solution of the local problem
  *
@@ -138,17 +141,21 @@ extern template class solveEikonalLocalProblem<3u>;
  * @param M The anisotropy matrix.
  * @return A structure containing the solution
  */
-EikonalSolution<3u> solveLocalProblem(std::array<std::array<double,3u>,4u> element,
+/*EikonalSolution<3u> solveLocalProblem(std::array<std::array<double,3u>,4u> element,
 		 Eigen::Matrix<double,3u,1u> values,
          Eigen::Matrix<double,3u,3u> const & M);
-/*!
+*//*!
  * @brief The version of solveLocalProblem for the standard probelm where M=I (identity)
  *
  * @detail See the documantation of the other version
- */
+ *//*
 EikonalSolution<3u> solveLocalProblemIsotropic(std::array<std::array<double,3u>,4u> element,
-		Eigen::Matrix<double,3u,1u> values);
-#endif
+		Eigen::Matrix<double,3u,1u> values);*/
+
+
+    EikonalSolution<3u> solveLocalProblem(std::array<std::array<double, 3u>, 3u> element,
+                                          Eigen::Matrix<double, 2u, 1u> values,
+                                          Eigen::Matrix<double, 3u, 3u> const &M);
 
 } // namespace Eikonal
 #endif

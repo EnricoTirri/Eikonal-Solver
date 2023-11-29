@@ -31,59 +31,87 @@
 
 
 int main() {
-    Mesh<3u, 4u> mesh;
-    using Point = Eikonal_traits<3u>::Point;
-    std::unordered_map<Point, double> pointData;
-    std::unordered_map<MeshElement<3, 4>, double> elementData;
+    {
+        Mesh<3u, 4u> mesh;
+        using Point = Eikonal_traits<3u>::Point;
+        std::unordered_map<Point, double> pointData;
+        std::unordered_map<MeshElement<3, 4>, double> elementData;
 
-    VtkParser parser;
-    parser.open("tetramesh.vtk");
+        VtkParser parser;
+        parser.open("tetramesh.vtk");
 
-    if (MeshLoader<3, 4>::load(mesh, parser, pointData, elementData) != 1) {
-        printf("unable to load the mesh");
-        return 1;
+        if (MeshLoader<3, 4>::load(mesh, parser, pointData, elementData) != 1) {
+            printf("unable to load the mesh");
+            return 1;
+        }
+
+        printf("end parsing\n");
+
+        //let's try it
+        std::unordered_map<Point, double> U;
+        std::vector<Point> L;
+        std::vector<Point> X;
+        //-0.0378297 0.12794 0.00447467
+        //X.emplace_back(-0.0378297, 0.12794, 0.00447467);
+        X.emplace_back(0, 0, 0);
+        time_t start = clock();
+
+        bool success = methods::FIM<3, 4>(U, X, L, mesh);
+        time_t end = clock();
+
+        if (success) {
+            printf("end FIM, time elapsed: %f\n", (double) (end - start) / CLOCKS_PER_SEC);
+
+            MeshLoader<3, 4>::dump(mesh, parser, U, elementData);
+            parser.save("final_out.vtk");
+        } else {
+            printf("FIM failed\n");
+        }
+        U.clear();
+        L.clear();
     }
 
-    printf("end parsing\n");
+    {
+        Mesh<3u, 3u> mesh;
+        using Point = Eikonal_traits<3u>::Point;
+        std::unordered_map<Point, double> pointData;
+        std::unordered_map<MeshElement<3, 3>, double> elementData;
 
-    //let's try it
-    std::unordered_map<Point, double> U;
-    std::vector<Point> L;
-    std::vector<Point> X;
+        VtkParser parser;
+        parser.open("bunny.vtk");
 
-    X.emplace_back(0, 0, 0);
-    X.emplace_back(1, 0, 0);
-    X.emplace_back(0, 1, 0);
-    X.emplace_back(0, 0, 1);
-    X.emplace_back(1, 1, 1);
-    X.emplace_back(1, 0, 1);
-    X.emplace_back(0, 1, 1);
-    X.emplace_back(1, 1, 0);
+        if (MeshLoader<3, 3>::load(mesh, parser, pointData, elementData) != 1) {
+            printf("unable to load the mesh");
+            return 1;
+        }
 
-    time_t start = clock();
+        printf("end parsing\n");
 
-    bool success = methods::FIM<3, 4>(U, X, L, mesh);
-    time_t end = clock();
+        //let's try it
+        std::unordered_map<Point, double> U;
+        std::vector<Point> L;
+        std::vector<Point> X;
+        //-0.0378297 0.12794 0.00447467
+        X.emplace_back(-0.0378297, 0.12794, 0.00447467);
 
-    if(success) {
-        printf("end FIM, time elapsed: %f\n", (double) (end - start) / CLOCKS_PER_SEC);
+        // X.emplace_back(0, 0, 0);
+        time_t start = clock();
 
-        MeshLoader<3, 4>::dump(mesh, parser, U, elementData);
-        parser.save("final_out.vtk");
-    } else {
-        printf("FIM failed\n");
+        bool success = methods::FIM<3, 3>(U, X, L, mesh);
+        time_t end = clock();
+
+        if (success) {
+            printf("end FIM, time elapsed: %f\n", (double) (end - start) / CLOCKS_PER_SEC);
+
+            MeshLoader<3, 3>::dump(mesh, parser, U, elementData);
+            parser.save("bunny_out.vtk");
+        } else {
+            printf("FIM failed\n");
+        }
+        U.clear();
+        L.clear();
     }
     //let's try the fast sweeping method
-    start = clock();
-    success = methods::FSM<3, 4>(U, X, L, mesh);
-    end = clock();
-    if (success) {
-        printf("end FSM, time elapsed: %f\n", (double) (end - start) / CLOCKS_PER_SEC);
 
-        MeshLoader<3, 4>::dump(mesh, parser, U, elementData);
-        parser.save("final_outfsm.vtk");
-    } else {
-        printf("FSM failed\n");
-    }
     return 0;
 }

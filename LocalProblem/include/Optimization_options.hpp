@@ -33,10 +33,14 @@ struct OptimizationData
               gradient;              //!< The gradient of the cost function.
   //! The Hessian: by default an empty matrix
   apsc::LineSearch_traits::Hessian hessian=[](apsc::LineSearch_traits::Vector const &){return apsc::LineSearch_traits::Matrix{};};
-  std::size_t NumberOfVariables = 0; //! The number of variables of the problem.
-  bool        bounded = false;       //! We may have bound constraints
-  std::vector<double> lowerBounds;   //! Uses if bounded=true
-  std::vector<double> upperBounds;   //! Uses if bounded=true
+    //! The number of variables of the problem.
+    std::size_t NumberOfVariables = 0;
+    //! We may have bound constraints
+    bool bounded = false;
+    //! Uses if bounded=true
+    std::vector<double> lowerBounds;
+    //! Uses if bounded=true
+    std::vector<double> upperBounds;
 };
 
 inline void

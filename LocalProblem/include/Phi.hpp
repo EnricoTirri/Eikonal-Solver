@@ -12,7 +12,7 @@
 #include <cmath>
 namespace Eikonal
 {
-template<std::size_t PHDIM>
+    template<std::size_t PHDIM, std::size_t MESH_ELEMENT_SIZE>
 struct Phi
 {
 	// The vector of the unknowns lambdas
@@ -22,8 +22,10 @@ struct Phi
 	using VectorExt=typename Eikonal_traits<PHDIM>::VectorExt;
 	// The dimension of the unknwons (phisical dim -1)
 	static constexpr std::size_t DIM=PHDIM-1u;
+    static constexpr std::size_t MESH_ELE_SIZE = MESH_ELEMENT_SIZE - 1u;
 	//@todo implementare move semantic per velocizzare
-	Phi(SimplexData<PHDIM> const & simplex, VectorExt const & values):simplexData{simplex},values{values}
+    Phi(SimplexData<PHDIM, MESH_ELEMENT_SIZE> const &simplex, VectorExt const &values) : simplexData{simplex},
+                                                                                         values{values}
 	{
 		du(0)=values(0)-values(DIM);// u31 (u21)
 		du(DIM)=values(DIM); // u3 (u2)
@@ -79,7 +81,7 @@ struct Phi
 				  );
 	  }
 
-	  SimplexData<PHDIM> simplexData;
+    SimplexData<PHDIM, MESH_ELEMENT_SIZE> simplexData;
 	  VectorExt values;
 	  VectorExt du;
 

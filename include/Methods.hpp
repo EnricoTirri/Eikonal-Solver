@@ -11,12 +11,11 @@
 #include <Eikonal_traits.hpp>
 #include <unordered_map>
 #include <vector>
-//#define DIM 3
+//#define PHDIM 3
 //#define MESH_SIZE 4
 #define MAXF 900000
 namespace methods {
     template<int DIM, int MESH_SIZE>
-
     static bool FIM(std::unordered_map<typename Eikonal_traits<DIM>::Point, double> &U,
                     std::vector<typename Eikonal_traits<DIM>::Point> X,
                     std::vector<typename Eikonal_traits<DIM>::Point> L,
@@ -86,9 +85,9 @@ namespace methods {
                             M << 1.0, 0.0, 0.0,
                                     0.0, 1.0, 0.0,
                                     0.0, 0.0, 1.0;
-                        Eikonal::SimplexData<DIM> simplex{base, M};
-                        Eikonal::solveEikonalLocalProblem<DIM> solver{std::move(simplex),
-                                                                      values};
+                        Eikonal::SimplexData<DIM, MESH_SIZE> simplex{base, M};
+                        Eikonal::solveEikonalLocalProblem<DIM, MESH_SIZE> solver{std::move(simplex),
+                                                                                 values};
                         auto sol = solver();
                         //if no descent direction or no convergence kill the process
                         if (sol.status != 0) {
@@ -147,8 +146,11 @@ namespace methods {
     }
 
 
-    // template<std::size_t DIM, std::size_t MESH_SIZE>
+    // template<std::size_t PHDIM, std::size_t MESH_SIZE>
     //!Fast sweeping method
+#undef DIM
+#undef MESH_SIZE
+
     template<std::size_t DIM, std::size_t MESH_SIZE>
     bool FSM(std::unordered_map<typename Eikonal::Eikonal_traits<DIM>::Point, double> &U,
              std::vector<typename Eikonal::Eikonal_traits<DIM>::Point> X,
@@ -198,7 +200,7 @@ namespace methods {
             //with task maybe we can parallelize this
             for (const auto &m_element: neighbors) {
                 for (const Point &point: *m_element) {
-                    if (point == i || U[point] != MAXF) continue;
+                    if (point == i) continue;
                     //if point in L continue
                     //solve local problem with this point as unknown and the others as base
                     std::array<Point, MESH_SIZE> base;
@@ -226,9 +228,9 @@ namespace methods {
                                 0.0, 1.0, 0.0,
                                 0.0, 0.0, 1.0;
 
-                    Eikonal::SimplexData<DIM> simplex{base, M};
-                    Eikonal::solveEikonalLocalProblem<DIM> solver{std::move(simplex),
-                                                                  values};
+                    Eikonal::SimplexData<DIM, MESH_SIZE> simplex{base, M};
+                    Eikonal::solveEikonalLocalProblem<DIM, MESH_SIZE> solver{std::move(simplex),
+                                                                             values};
                     auto sol = solver();
                     //if no descent direction or no convergence kill the process
                     if (sol.status != 0) {
@@ -245,14 +247,16 @@ namespace methods {
                         for (int i = 0; i < DIM; i++) {
                             p[i] = point[i];
                         }
+                        //add element to heap L
                         L.emplace_back(p);
+                        //L.emplace_back(p);
                     }
                 }
             }
 
             //heapify L, so that the smallest value is at the top
             std::make_heap(L.begin(), L.end(), [&U](const Point &a, const Point &b) {
-                return U[a] < U[b];
+                return U[a] > U[b];
             });
         }
         return true;

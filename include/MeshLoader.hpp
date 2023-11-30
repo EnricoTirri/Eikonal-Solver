@@ -5,6 +5,10 @@
 #ifndef EIKONEL_TEST_MESHLOADER_H
 #define EIKONEL_TEST_MESHLOADER_H
 
+#ifndef MSHLOADER_VERBOSE
+#define MSHLOADER_VERBOSE false
+#endif
+
 #include <Mesh.h>
 #include <Eikonal_traits.hpp>
 #include <VtkParser.hpp>
@@ -29,6 +33,10 @@ struct MeshLoader {
         //support structure for parsing file
         unordered_map<P, vector<M *>> read;
 
+#if MSHLOADER_VERBOSE
+        cout << "(MSHLOADER): starting loading points ... ";
+#endif
+
         for (auto cell: parser.cells) {
             M &m = mesh.elements.emplace_back();
             for (int i = 0; i < MESHSIZE; ++i) {
@@ -37,11 +45,21 @@ struct MeshLoader {
             }
         }
 
+#if MSHLOADER_VERBOSE
+        cout << "end" << endl;
+        cout << "(MSHLOADER): starting loading mesh elements ... ";
+#endif
+
         for (auto &element: mesh.elements) {
             for (int i = 0; i < MESHSIZE; i++) {
                 read[element[i]].push_back(&element);
             }
         }
+
+#if MSHLOADER_VERBOSE
+        cout << "end" << endl;
+        cout << "(MSHLOADER): starting loading adjacents ... ";
+#endif
 
         size_t k = 0;
         size_t prev = 0;
@@ -59,6 +77,10 @@ struct MeshLoader {
             prev = k;
         }
 
+#if MSHLOADER_VERBOSE
+        cout << "end" << endl;
+#endif
+
         return 1;
     }
 
@@ -69,6 +91,11 @@ struct MeshLoader {
         unordered_map<P, int> point_index;
         vector<array<double, 3>> points;
         int i = 0;
+
+#if MSHLOADER_VERBOSE
+        cout << "(MSHLOADER): starting dumping points ... ";
+#endif
+
         for (const auto &pair: mesh.index) {
             point_index[pair.first] = i;
             array<double, 3> temp = {0, 0, 0};
@@ -78,6 +105,11 @@ struct MeshLoader {
             ++i;
         }
 
+#if MSHLOADER_VERBOSE
+        cout << "end" << endl;
+        cout << "(MSHLOADER): starting dumping mesh elements ... ";
+#endif
+
         vector<vector<int>> cells;
         for (const auto &tri_points: mesh.elements) {
             vector<int> t_cell;
@@ -85,6 +117,11 @@ struct MeshLoader {
                 t_cell.emplace_back(point_index[p]);
             cells.emplace_back(t_cell);
         }
+
+#if MSHLOADER_VERBOSE
+        cout << "end" << endl;
+        cout << "(MSHLOADER): starting dumping points data ... ";
+#endif
 
         vector<vector<double>> points_value;
         for (const auto &pair: mesh.index) {
@@ -94,6 +131,10 @@ struct MeshLoader {
                 points_value.emplace_back(c_temp);
             }
         }
+
+#if MSHLOADER_VERBOSE
+        cout << "end" << endl;
+#endif
 
         vector<vector<double>> cell_value;
 

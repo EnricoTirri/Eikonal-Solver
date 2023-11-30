@@ -135,7 +135,7 @@ void VtkParser::ascii_parser(std::ifstream *in) {
             }
 
 #if PARSER_VERBOSE
-            cout << "end " << endl;
+            cout << endl;
 #endif
 
         }

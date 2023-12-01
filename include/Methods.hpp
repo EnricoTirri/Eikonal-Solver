@@ -14,7 +14,7 @@
 #include <Eikonal_traits.hpp>
 #include <unordered_map>
 #include <vector>
-//#define PHDIM 3
+//#define MSHDIM 3
 //#define MESH_SIZE 4
 #define MAXF 90000
 namespace methods {
@@ -23,6 +23,7 @@ namespace methods {
                     std::vector<typename Eikonal_traits<DIM>::Point> X,
                     std::vector<typename Eikonal_traits<DIM>::Point> L,
                     const Mesh<DIM, MESH_SIZE> &data) {
+
         typedef typename Eikonal_traits<DIM>::Point Point;
         for (auto &point: X) {
             if (!data.index.contains(point)) {
@@ -66,7 +67,7 @@ namespace methods {
                         //solve local problem with this point as unknown and the others as base
                         std::array<Point, MESH_SIZE> base;
                         std::size_t k = 0;
-                        Eigen::Matrix<double, MESH_SIZE - 1, 1> values;
+                        Eigen::Matrix<double, MESH_SIZE, 1> values;
                         for (int j = 0; j < DIM; ++j) {
                             values[j] = 0;
                         }
@@ -83,10 +84,10 @@ namespace methods {
                         }
 
                         typename Eikonal::Eikonal_traits<DIM>::MMatrix M;
-                        if (DIM == 2)
+                        if constexpr (DIM == 2)
                             M << 1.0, 0.0,
                                     0.0, 1.0;
-                        else if (DIM == 3)
+                        else if constexpr (DIM == 3)
                             M << 1.0, 0.0, 0.0,
                                     0.0, 1.0, 0.0,
                                     0.0, 0.0, 1.0;
@@ -165,7 +166,7 @@ namespace methods {
 
         U.reserve(data.index.size());
 
-        omp_set_num_threads(_NUM_THREADS);//TODO set macro for
+        ///omp_set_num_threads(_NUM_THREADS);//TODO set macro for
         for (const auto &i: data.index) {
             U[i.first] = MAXF;
         }

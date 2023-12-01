@@ -11,7 +11,7 @@
 #include<array>
 #include "Eigen/Core"
 #include "LineSearch_traits.hpp"
-//PHDIM phisical dimension of the domain
+//MSHDIM phisical dimension of the domain
 namespace Eikonal
 {
 
@@ -22,8 +22,7 @@ namespace Eikonal
 	  using Edge=Eigen::Matrix<double,PHDIM,1>;
 	  using AnisotropyM=Eigen::Matrix<double,PHDIM,PHDIM>;
 	  using MMatrix=Eigen::Matrix<double,PHDIM,PHDIM>;
-	  using Vector=Eigen::Matrix<double,PHDIM-1,1>;
-	  using VectorExt=Eigen::Matrix<double,PHDIM,1>;
+	  using Vector=Eigen::Matrix<double,PHDIM,1>;
   };
 }
 

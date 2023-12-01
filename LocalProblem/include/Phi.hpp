@@ -7,89 +7,78 @@
 
 #ifndef EIKONAL_PHI_HPP_
 #define EIKONAL_PHI_HPP_
+
 #include "LineSearch_traits.hpp"
 #include "SimplexData.hpp"
 #include <cmath>
-namespace Eikonal
-{
-    template<std::size_t PHDIM, std::size_t MESH_ELEMENT_SIZE>
-struct Phi
-{
-	// The vector of the unknowns lambdas
-	using Vector=typename apsc::LineSearch_traits::Vector;
-	using Scalar=typename apsc::LineSearch_traits::Scalar;
-	using Matrix=typename apsc::LineSearch_traits::Matrix;
-	using VectorExt=typename Eikonal_traits<PHDIM>::VectorExt;
-	// The dimension of the unknwons (phisical dim -1)
-	static constexpr std::size_t DIM=PHDIM-1u;
-    static constexpr std::size_t MESH_ELE_SIZE = MESH_ELEMENT_SIZE - 1u;
-	//@todo implementare move semantic per velocizzare
-    Phi(SimplexData<PHDIM, MESH_ELEMENT_SIZE> const &simplex, VectorExt const &values) : simplexData{simplex},
-                                                                                         values{values}
-	{
-		du(0)=values(0)-values(DIM);// u31 (u21)
-		du(DIM)=values(DIM); // u3 (u2)
-		if constexpr (PHDIM==3u)
-		{
-			du(1)=values(1)-values(DIM);
-		}
-		lambdaExt(DIM)=1.0;
-	};
-	// a more efficient implementation chaches some quantities
-	// here I just use the expressions straight away to avoid
-	// errors
-	  Scalar operator()(Vector const & v)const
-	  {
-		  lambdaExt.template topRows<DIM>()=v;
-		  return lambdaExt.dot(du) + normL();
-	  }
 
-	  decltype(auto) gradient(Vector const & v)const
-	  {
-		  lambdaExt.template topRows<DIM>()=v;
-		  return du.template topRows<DIM>()+
-				  simplexData.MM_Matrix.template block<DIM,PHDIM>(0,0)*lambdaExt/normL();
-	  }
+namespace Eikonal {
+    /**
+     * @brief Phi function for Local Problem solution
+     *
+     * @tparam PHDIM the physical dimension
+     * @tparam MSHDIM the mesh number of points
+     */
+//#define MSHDIM 3
+//#define MSHDIM 3
 
-	  Matrix hessian(Vector const & v)const
-	  {
-		  lambdaExt.template topRows<DIM>()=v;
-		  auto n = 1./normL();
-		  auto n3= n*n*n;
-//		  if constexpr (PHDIM==3u)
-	//	{
-		  Vector part{simplexData.MM_Matrix.template block<DIM,PHDIM>(0,0)*lambdaExt};
-		  Matrix parta;
-		  parta=simplexData.MM_Matrix.template block<DIM,DIM>(0,0);
-		  Matrix partb;
-		  partb=part*part.transpose();
-		  return n*parta-n3*partb;
-		//}
-		  //else
-		  //{
-			//  Matrix const & M=simplexData.MM_Matrix;
-			  //return (M(0,0)*M(1,1)-M(0,1)*M(0,1))/
-				//	  std::pow(lambdaExt(0)*lambdaExt(0)*M(1,1)+2.*lambdaExt(0)*M(0,1)+M(1,1), 3./2.);
-		  //}
-	  }
+    template<std::size_t PHDIM, std::size_t MSHDIM>
+    struct Phi {
+        using Scalar = double;
+        // The dimension of the unknowns (Problem dimension - 2)
+        static constexpr std::size_t DIM = MSHDIM - 2u;
 
-	  Scalar normL() const
-	  {
-		  return std::sqrt(
-				  lambdaExt.transpose()*
-				  simplexData.MM_Matrix*lambdaExt
-				  );
-	  }
+    public:
+        //@todo implementare move semantic per velocizzare
+        Phi(SimplexData<PHDIM, MSHDIM> const &simplex, Eikonal_traits<MSHDIM>::Vector const &values) : simplexData{simplex}, values{values} {
+            du(0) = values(0) - values(DIM);// u31 (u21)
+            du(DIM) = values(DIM); // u3 (u2)
+            if constexpr (MSHDIM == 4u) {
+                du(1) = values(1) - values(DIM);
+            }
+            lambdaExt(DIM) = 1.0;
+        };
 
-    SimplexData<PHDIM, MESH_ELEMENT_SIZE> simplexData;
-	  VectorExt values;
-	  VectorExt du;
+        // a more efficient implementation chaches some quantities
+        // here I just use the expressions straight away to avoid
+        // errors
+        Scalar operator()(Eikonal_traits<DIM>::Vector const &v) const {
+            lambdaExt.template topRows<DIM>() = v;
+            return lambdaExt.dot(du) + normL();
+        }
 
-	  mutable VectorExt lambdaExt;	// can change value from a const function because declared as mutable
-};
+        decltype(auto) gradient(Eikonal_traits<DIM>::Vector const &v) const {
+            lambdaExt.template topRows<DIM>() = v;
+            return du.template topRows<DIM>() +
+                   simplexData.MM_Matrix.template block<DIM, DIM+1>(0, 0) * lambdaExt / normL();
+        }
+
+        Eikonal_traits<DIM>::MMatrix hessian(Eikonal_traits<DIM>::Vector const &v) const {
+            lambdaExt.template topRows<DIM>() = v;
+            auto n = 1. / normL();
+            auto n3 = n * n * n;
+            typename Eikonal_traits<DIM>::Vector part{simplexData.MM_Matrix.template block<DIM, DIM+1>(0, 0) * lambdaExt};
+            typename Eikonal_traits<DIM>::MMatrix parta{simplexData.MM_Matrix.template block<DIM, DIM>(0, 0)};
+            typename Eikonal_traits<DIM>::MMatrix partb{part * part.transpose()};
+            return n * parta - n3 * partb;
+
+        }
+
+        Scalar normL() const {
+            return std::sqrt(
+                    lambdaExt.transpose() *
+                    simplexData.MM_Matrix * lambdaExt
+            );
+        }
+
+    private:
+        SimplexData<PHDIM, MSHDIM> simplexData;
+        Eikonal_traits<MSHDIM>::Vector values;
+        Eikonal_traits<MSHDIM-1>::Vector du;
+
+        mutable Eikonal_traits<MSHDIM-1>::Vector lambdaExt;    // can change value from a const function because declared as mutable
+    };
 }
-
-
 
 
 #endif /* EIKONAL_PHI_HPP_ */

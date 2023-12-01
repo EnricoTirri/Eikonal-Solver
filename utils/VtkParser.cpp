@@ -7,10 +7,6 @@
 #include "VtkParser.hpp"
 #include <iostream>
 
-#ifndef PARSER_VERBOSE
-#define PARSER_VERBOSE false
-#endif
-
 using namespace std;
 
 void VtkParser::open(const std::string &filename) {
@@ -54,13 +50,13 @@ void VtkParser::ascii_parser(std::ifstream *in) {
             *in >> temp; //reads datatype, discard, always use float
 
             points.clear();
-#if PARSER_VERBOSE
+#ifdef PARSER_VERBOSE
             int step_point = n_points/10;
             int count = 0;
             cout << "(PARSER): starting parsing " << n_points << " points: ";
 #endif
             for (int i = 0; i < n_points; ++i) {
-#if PARSER_VERBOSE
+#ifdef PARSER_VERBOSE
                 if(step_point == count){
                     cout << "0";
                     count = 0;
@@ -74,7 +70,7 @@ void VtkParser::ascii_parser(std::ifstream *in) {
                 if(z>0) is2DPoint = false;
                 points.emplace_back(x, y, z);
             }
-#if PARSER_VERBOSE
+#ifdef PARSER_VERBOSE
             cout << endl;
 #endif
         }else if(temp == "CELLS"){
@@ -83,14 +79,14 @@ void VtkParser::ascii_parser(std::ifstream *in) {
 
             *in >> temp; //read cell size, useless
 
-#if PARSER_VERBOSE
+#ifdef PARSER_VERBOSE
             int step_cells = n_cells/10;
             int count = 0;
             cout << "(PARSER): starting parsing " << n_cells << " cells: ";
 #endif
             for(int i = 0; i< n_cells; ++i){
 
-#if PARSER_VERBOSE
+#ifdef PARSER_VERBOSE
                 if(step_cells == count){
                     cout << "0";
                     count = 0;
@@ -111,20 +107,20 @@ void VtkParser::ascii_parser(std::ifstream *in) {
                 if(n_points>cell_max_d) cell_max_d = n_points;
                 cells.emplace_back(cell);
             }
-#if PARSER_VERBOSE
+#ifdef PARSER_VERBOSE
             cout << endl;
 #endif
         }else if(temp == "CELL_TYPES"){
             int n_cells;
             *in >> n_cells;
 
-#if PARSER_VERBOSE
+#ifdef PARSER_VERBOSE
             int step_cells = n_cells/10;
             int count = 0;
             cout << "(PARSER): starting parsing " << n_cells << " cells types: ";
 #endif
             for(int i = 0; i<n_cells; ++i){
-#if PARSER_VERBOSE
+#ifdef PARSER_VERBOSE
                 if(step_cells == count){
                     cout << "0";
                     count = 0;
@@ -138,7 +134,7 @@ void VtkParser::ascii_parser(std::ifstream *in) {
                 cells[i].type = type;
             }
 
-#if PARSER_VERBOSE
+#ifdef PARSER_VERBOSE
             cout << endl;
 #endif
 
@@ -167,14 +163,14 @@ void VtkParser::save(const string &filename) {
     out << endl;
 
     out << "POINTS " << points.size() << " float" <<endl;
-#if PARSER_VERBOSE
+#ifdef PARSER_VERBOSE
     cout << "(PARSER): starting saving points ... ";
 #endif
-    for(const auto& point : points){
-        out << point.x() << " " << point.y() << " " << point.z() << endl;
+    for(auto& point : points){
+        out << point.x() << " " << point.y() << " "<< point.z() << endl;
     }
     out << endl;
-#if PARSER_VERBOSE
+#ifdef PARSER_VERBOSE
     cout << "end" << endl;
     cout << "(PARSER): starting saving cells ... ";
 #endif
@@ -193,7 +189,7 @@ void VtkParser::save(const string &filename) {
     }
     out << endl;
 
-#if PARSER_VERBOSE
+#ifdef PARSER_VERBOSE
     cout << "end" << endl;
     cout << "(PARSER): starting saving cells types ... ";
 #endif
@@ -204,8 +200,8 @@ void VtkParser::save(const string &filename) {
     }
     out << endl;
 
-#if PARSER_VERBOSE
-    cout << endl;
+#ifdef PARSER_VERBOSE
+    cout << "end" << endl;
 #endif
 
     int point_data_size = 0;
@@ -214,7 +210,7 @@ void VtkParser::save(const string &filename) {
     }
     if(point_data_size!=0) {
 
-#if PARSER_VERBOSE
+#ifdef PARSER_VERBOSE
         cout << "(PARSER): starting saving points data ... ";
 #endif
         out << "POINT_DATA " << point_data_size << endl;
@@ -227,7 +223,7 @@ void VtkParser::save(const string &filename) {
         }
         out << endl;
 
-#if PARSER_VERBOSE
+#ifdef PARSER_VERBOSE
         cout << "end" << endl;
 #endif
     }
@@ -237,7 +233,7 @@ void VtkParser::save(const string &filename) {
         if(!cell.data.empty()) ++cell_data_size;
     }
     if(cell_data_size>0) {
-#if PARSER_VERBOSE
+#ifdef PARSER_VERBOSE
         cout << "(PARSER): starting saving cell data ... ";
 #endif
 
@@ -250,7 +246,7 @@ void VtkParser::save(const string &filename) {
             out << endl;
         }
 
-#if PARSER_VERBOSE
+#ifdef PARSER_VERBOSE
         cout << "end" << endl;
 #endif
     }
@@ -262,7 +258,7 @@ void VtkParser::loadMesh(const std::vector<std::array<double,3>>& new_points, co
     points.clear();
     cells.clear();
 
-#if PARSER_VERBOSE
+#ifdef PARSER_VERBOSE
     cout << "(PARSER): starting loading points and points data ... ";
 #endif
     for(int i = 0; i<new_points.size();++i){
@@ -272,7 +268,7 @@ void VtkParser::loadMesh(const std::vector<std::array<double,3>>& new_points, co
         points.emplace_back(new_points[i][0], new_points[i][1], new_points[i][2], data);
     }
 
-#if PARSER_VERBOSE
+#ifdef PARSER_VERBOSE
     cout << "end" << endl;
     cout << "(PARSER): starting loading cells and cell data ... ";
 #endif
@@ -284,7 +280,7 @@ void VtkParser::loadMesh(const std::vector<std::array<double,3>>& new_points, co
         cells.emplace_back(5,new_cells[i],data);
     }
 
-#if PARSER_VERBOSE
+#ifdef PARSER_VERBOSE
     cout << "end" << endl;
 #endif
 

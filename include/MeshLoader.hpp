@@ -5,9 +5,7 @@
 #ifndef EIKONEL_TEST_MESHLOADER_H
 #define EIKONEL_TEST_MESHLOADER_H
 
-#ifndef MSHLOADER_VERBOSE
-#define MSHLOADER_VERBOSE false
-#endif
+
 
 #include <Mesh.h>
 #include <Eikonal_traits.hpp>
@@ -33,7 +31,7 @@ struct MeshLoader {
         //support structure for parsing file
         unordered_map<P, vector<M *>> read;
 
-#if MSHLOADER_VERBOSE
+#ifdef MSHLOADER_VERBOSE
         cout << "(MSHLOADER): starting loading points ... ";
 #endif
 
@@ -41,11 +39,12 @@ struct MeshLoader {
             M &m = mesh.elements.emplace_back();
             for (int i = 0; i < MESHSIZE; ++i) {
                 VtkPoint v_p = parser.points[cell.point_ids[i]];
-                m[i] = P{v_p.x, v_p.y, v_p.z};
+                for (int j = 0; j < DIM; ++j)
+                    m[i][j] = v_p.vec[j];
             }
         }
 
-#if MSHLOADER_VERBOSE
+#ifdef MSHLOADER_VERBOSE
         cout << "end" << endl;
         cout << "(MSHLOADER): starting loading mesh elements ... ";
 #endif
@@ -56,7 +55,7 @@ struct MeshLoader {
             }
         }
 
-#if MSHLOADER_VERBOSE
+#ifdef MSHLOADER_VERBOSE
         cout << "end" << endl;
         cout << "(MSHLOADER): starting loading adjacents ... ";
 #endif
@@ -77,7 +76,7 @@ struct MeshLoader {
             prev = k;
         }
 
-#if MSHLOADER_VERBOSE
+#ifdef MSHLOADER_VERBOSE
         cout << "end" << endl;
 #endif
 
@@ -92,7 +91,7 @@ struct MeshLoader {
         vector<array<double, 3>> points;
         int i = 0;
 
-#if MSHLOADER_VERBOSE
+#ifdef MSHLOADER_VERBOSE
         cout << "(MSHLOADER): starting dumping points ... ";
 #endif
 
@@ -105,7 +104,7 @@ struct MeshLoader {
             ++i;
         }
 
-#if MSHLOADER_VERBOSE
+#ifdef MSHLOADER_VERBOSE
         cout << "end" << endl;
         cout << "(MSHLOADER): starting dumping mesh elements ... ";
 #endif
@@ -118,7 +117,7 @@ struct MeshLoader {
             cells.emplace_back(t_cell);
         }
 
-#if MSHLOADER_VERBOSE
+#ifdef MSHLOADER_VERBOSE
         cout << "end" << endl;
         cout << "(MSHLOADER): starting dumping points data ... ";
 #endif
@@ -132,7 +131,7 @@ struct MeshLoader {
             }
         }
 
-#if MSHLOADER_VERBOSE
+#ifdef MSHLOADER_VERBOSE
         cout << "end" << endl;
 #endif
 

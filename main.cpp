@@ -31,16 +31,19 @@
 
 
 int main() {
+    const size_t pointdim = 3;
+    const size_t meshdim = 3;
+    const string filename = "testmesh";
     {
-        Mesh<3u, 4u> mesh;
-        using Point = Eikonal_traits<3u>::Point;
+        Mesh<pointdim, meshdim> mesh;
+        using Point = Eikonal_traits<pointdim>::Point;
         std::unordered_map<Point, double> pointData;
-        std::unordered_map<MeshElement<3, 4>, double> elementData;
+        std::unordered_map<MeshElement<pointdim, meshdim>, double> elementData;
 
         VtkParser parser;
-        parser.open("tetramesh.vtk");
+        parser.open(filename + ".vtk");
 
-        if (MeshLoader<3, 4>::load(mesh, parser, pointData, elementData) != 1) {
+        if (MeshLoader<pointdim, meshdim>::load(mesh, parser, pointData, elementData) != 1) {
             printf("unable to load the mesh");
             return 1;
         }
@@ -52,18 +55,21 @@ int main() {
         std::vector<Point> L;
         std::vector<Point> X;
         //-0.0378297 0.12794 0.00447467
-        //X.emplace_back(-0.0378297, 0.12794, 0.00447467);
-        X.emplace_back(0, 0, 0);
-        time_t start = clock();
 
-        bool success = methods::FIM<3, 4>(U, X, L, mesh);
-        time_t end = clock();
+        // X.emplace_back(-0.0378297, 0.12794, 0.00447467);
+
+        X.emplace_back(0, 0, 0);
+        X.emplace_back(1, 1, 0);
+        time_t start2 = clock();
+
+        bool success = methods::FIM<pointdim, meshdim>(U, X, L, mesh);
+        time_t end2 = clock();
 
         if (success) {
-            printf("end FIM, time elapsed: %f\n", (double) (end - start) / CLOCKS_PER_SEC);
+            printf("end FIM, time elapsed: %f\n", (double) (end2 - start2) / CLOCKS_PER_SEC);
 
-            MeshLoader<3, 4>::dump(mesh, parser, U, elementData);
-            parser.save("final_out.vtk");
+            MeshLoader<pointdim, meshdim>::dump(mesh, parser, U, elementData);
+            parser.save(filename + "_out.vtk");
         } else {
             printf("FIM failed\n");
         }
@@ -95,16 +101,19 @@ int main() {
         X.emplace_back(-0.0378297, 0.12794, 0.00447467);
 
         // X.emplace_back(0, 0, 0);
-        time_t start = clock();
+        timespec start, end;
+        clock_gettime(CLOCK_MONOTONIC, &start);
 
-        bool success = methods::FIM<3, 3>(U, X, L, mesh);
-        time_t end = clock();
+        bool success = methods::FIMpp<3, 3>(U, X, L, mesh);
+        clock_gettime(CLOCK_MONOTONIC, &end);
 
         if (success) {
-            printf("end FIM, time elapsed: %f\n", (double) (end - start) / CLOCKS_PER_SEC);
+            double elapsed = (end.tv_sec - start.tv_sec);
+            elapsed += (end.tv_nsec - start.tv_nsec) / 1000000000.0;
+            printf("end FIM, time elapsed: %f\n", elapsed);
 
             MeshLoader<3, 3>::dump(mesh, parser, U, elementData);
-            parser.save("bunny_out.vtk");
+            parser.save("bunny_outpp.vtk");
         } else {
             printf("FIM failed\n");
         }

@@ -74,7 +74,9 @@ void VtkParser::ascii_parser(std::ifstream *in) {
                 if(z>0) is2DPoint = false;
                 points.emplace_back(x, y, z);
             }
+#if PARSER_VERBOSE
             cout << endl;
+#endif
         }else if(temp == "CELLS"){
             int n_cells;
             *in >> n_cells;
@@ -109,7 +111,9 @@ void VtkParser::ascii_parser(std::ifstream *in) {
                 if(n_points>cell_max_d) cell_max_d = n_points;
                 cells.emplace_back(cell);
             }
+#if PARSER_VERBOSE
             cout << endl;
+#endif
         }else if(temp == "CELL_TYPES"){
             int n_cells;
             *in >> n_cells;
@@ -167,7 +171,7 @@ void VtkParser::save(const string &filename) {
     cout << "(PARSER): starting saving points ... ";
 #endif
     for(const auto& point : points){
-        out << point.x << " " << point.y << " "<< point.z << endl;
+        out << point.x() << " " << point.y() << " " << point.z() << endl;
     }
     out << endl;
 #if PARSER_VERBOSE

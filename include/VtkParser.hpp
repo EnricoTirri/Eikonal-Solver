@@ -9,12 +9,19 @@
 
 class VtkPoint{
 public:
-    double x,y,z;
+    std::array<double, 3> vec;
     std::vector<double> data;
-    VtkPoint(double x, double y, double z):x{x},y{y},z{z}{}
+
+    VtkPoint(double x, double y, double z) : vec{x, y, z} {}
     VtkPoint(double x, double y, double z, std::vector<double> data) : VtkPoint(x,y,z){
         this->data = std::move(data);
     };
+
+    double x() const { return vec[0]; }
+
+    double y() const { return vec[1]; }
+
+    double z() const { return vec[2]; }
 };
 
 

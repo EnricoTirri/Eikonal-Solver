@@ -4,6 +4,9 @@
 
 #ifndef EIKONEL_TEST_FIM_HPP
 #define EIKONEL_TEST_FIM_HPP
+
+#include <queue>
+
 #ifndef _NUM_THREADS
 #define _NUM_THREADS 8
 #endif
@@ -16,8 +19,22 @@
 #include <vector>
 //#define MSHDIM 3
 //#define MESH_SIZE 4
-#define MAXF 90000
+#define MAXF 9000000
 namespace methods {
+    template<int DIM, int MESH_SIZE>
+    struct EikonalHeapComparator {
+        std::unordered_map<typename Eikonal_traits<DIM>::Point, double> &U;
+
+        // Constructor to initialize U reference
+        explicit EikonalHeapComparator(std::unordered_map<typename Eikonal_traits<DIM>::Point, double> &U) : U(U) {}
+
+        // Comparison function for the min heap
+        bool
+        operator()(const typename Eikonal_traits<DIM>::Point &a, const typename Eikonal_traits<DIM>::Point &b) const {
+            return U[a] > U[b]; // Min heap based on U values
+        }
+    };
+
     template<int DIM, int MESH_SIZE>
     static bool FIM(std::unordered_map<typename Eikonal_traits<DIM>::Point, double> &U,
                     std::vector<typename Eikonal_traits<DIM>::Point> X,
@@ -33,119 +50,92 @@ namespace methods {
         }
 
         U.reserve(data.index.size());
-
+        std::priority_queue<typename Eikonal_traits<DIM>::Point, std::vector<typename Eikonal_traits<DIM>::Point>, EikonalHeapComparator<DIM, MESH_SIZE>>
+                minHeap((EikonalHeapComparator<DIM, MESH_SIZE>(U)));
         for (const auto &i: data.index) {
             U[i.first] = MAXF;
         }
         for (const auto &i: X) {
             U[i] = 0;
-            L.push_back(i);
+            minHeap.push(i);
         }
 
         //2. Update points in L
-        while (!L.empty()) {
-            std::vector<Point> next_L;
-            next_L.clear();
+        while (!minHeap.empty()
+                ) {
+            Point i = minHeap.top();
+            minHeap.pop();
             bool error = false;
-            for (const Point &i: L) {
-                //take time value of point p
-                double p = U[i];
-                //find neighbors of L[i] and get the base (the DIMENSION points with the smallest value of U
-                std::vector<MeshElement<DIM, MESH_SIZE> *> neighbors;
-                std::size_t start, end;
-                start = data.index.at(i).start;
-                end = data.index.at(i).end;
-                for (std::size_t j = start; j < end; j++) {
-                    neighbors.push_back(data.adjacentList[j]);
-                }
+            //take time value of point p
+            double p = U[i];
+            //find neighbors of L[i] and get the base (the DIMENSION points with the smallest value of U
+            std::vector<MeshElement<DIM, MESH_SIZE> *> neighbors;
+            std::size_t start, end;
+            start = data.index.at(i).start;
+            end = data.index.at(i).end;
+            for (std::size_t j = start; j < end; j++) {
+                neighbors.push_back(data.adjacentList[j]);
+            }
 
-                //with task maybe we can parallelize this
-                for (const auto &m_element: neighbors) {
-                    for (const Point &point: *m_element) {
-                        if (point == i) continue;
-                        //if point in L continue
-                        //solve local problem with this point as unknown and the others as base
-                        std::array<Point, MESH_SIZE> base;
-                        std::size_t k = 0;
-                        Eigen::Matrix<double, MESH_SIZE, 1> values;
-                        for (int j = 0; j < DIM; ++j) {
-                            values[j] = 0;
-                        }
-                        for (std::size_t j = 0; j < MESH_SIZE; j++) {
-                            if ((*m_element)[j] == point) {
-                                base[MESH_SIZE - 1] = point;
-                            } else {
-                                base[k] = (*m_element)[j];
-                                k++;
-                            }
-                        }
-                        for (int iter = 0; iter < DIM; iter++) {
-                            values[iter] = U[base[iter]];
-                        }
-
-                        typename Eikonal::Eikonal_traits<DIM>::MMatrix M;
-                        if constexpr (DIM == 2)
-                            M << 1.0, 0.0,
-                                    0.0, 1.0;
-                        else if constexpr (DIM == 3)
-                            M << 1.0, 0.0, 0.0,
-                                    0.0, 1.0, 0.0,
-                                    0.0, 0.0, 1.0;
-                        Eikonal::SimplexData<DIM, MESH_SIZE> simplex{base, M};
-                        Eikonal::solveEikonalLocalProblem<DIM, MESH_SIZE> solver{std::move(simplex),
-                                                                                 values};
-
-                        auto sol = solver();
-                        //if no descent direction or no convergence kill the process
-                        if (sol.status != 0) {
-                            printf("error on convergence\n");
-                            error = true;
-                        }
-                        auto newU = sol.value;
-/*
-                    double b=-1;
-                    double c=-1;
-                    for(Point i2 : base)
-                    {
-                        if(i2!=point)
-                        {
-                            if (c<0)
-                                c=U[i2];
-                            else
-                                b=U[i2];
+            //with task maybe we can parallelize this
+            for (const auto &m_element: neighbors) {
+                for (const Point &point: *m_element) {
+                    if (point == i || U[point] != MAXF) continue;
+                    //if point in L continue
+                    //solve local problem with this point as unknown and the others as base
+                    std::array<Point, MESH_SIZE> base;
+                    std::size_t k = 0;
+                    Eigen::Matrix<double, MESH_SIZE, 1> values;
+                    for (int j = 0; j < DIM; ++j) {
+                        values[j] = 0;
+                    }
+                    for (std::size_t j = 0; j < MESH_SIZE; j++) {
+                        if ((*m_element)[j] == point) {
+                            base[MESH_SIZE - 1] = point;
+                        } else {
+                            base[k] = (*m_element)[j];
+                            k++;
                         }
                     }
-                    auto newU2 = solveQuadratic(99,b,c);
-                    if (abs(newU2-newU)>0.1)
-                    {
-                       // printf("difference local %f, quad: %f old: %f\n",newU,newU2,U[point]);
+                    for (int iter = 0; iter < DIM; iter++) {
+                        values[iter] = U[base[iter]];
                     }
-                    newU = newU2;*/
-                        if (newU < U[point]) {
-                            U[point] = newU;
-                            // #pragma omp atomic
-                            Point p;
+
+                    typename Eikonal::Eikonal_traits<DIM>::MMatrix M;
+                    if constexpr (DIM == 2)
+                        M << 1.0, 0.0,
+                                0.0, 1.0;
+                    else if constexpr (DIM == 3)
+                        M << 1.0, 0.0, 0.0,
+                                0.0, 1.0, 0.0,
+                                0.0, 0.0, 1.0;
+                    Eikonal::SimplexData<DIM, MESH_SIZE> simplex{base, M};
+                    Eikonal::solveEikonalLocalProblem<DIM, MESH_SIZE> solver{std::move(simplex),
+                                                                             values};
+
+                    auto sol = solver();
+                    //if no descent direction or no convergence kill the process
+                    if (sol.status != 0) {
+                        printf("error on convergence\n");
+                        error = true;
+                    }
+                    auto newU = sol.value;
+                    if (newU <
+                        MAXF) {//maybe we can remove this check, we are using a min heap and a fast marching method every point should be updated only once
+                        U[point] = newU;
+                        // #pragma omp atomic
+                        Point p;
 #pragma unroll
-                            for (int i = 0; i < DIM; i++) {
-                                p[i] = point[i];
-                            }
-                            next_L.emplace_back(p);
+                        for (int i = 0; i < DIM; i++) {
+                            p[i] = point[i];
                         }
+                        minHeap.push(p);
                     }
                 }
             }
-            if (error) return false;
-            //remove duplicates from next_L
-            std::sort(next_L.begin(), next_L.end(),
-                      [](const Point &a, const Point &b) {
-                          if constexpr (DIM == 2)
-                              return a.x() * 1000000 + a.y() < b.x() * 1000000 + b.y();
-                          else
-                              return a.x() * 1000000 + a.y() * 1000 + a.z() < b.x() * 1000000 + b.y() * 1000 + b.z();
-                      });
-            next_L.erase(std::unique(next_L.begin(), next_L.end()), next_L.end());
 
-            L = std::move(next_L);
+            if (error) return false;
+
         }
         return true;
     }

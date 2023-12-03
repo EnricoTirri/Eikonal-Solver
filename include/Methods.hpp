@@ -57,7 +57,7 @@ namespace methods {
             U[i] = 0;
             minHeap.push(i);
         }
-
+        std::unordered_map<Point, bool> L_set;
         while (!minHeap.empty()) {
             Point i = minHeap.top();
             minHeap.pop();
@@ -76,7 +76,7 @@ namespace methods {
             for (const auto &m_element: neighbors) {
 #pragma unroll MESH_SIZE
                 for (const Point &point: *m_element) {
-                    if (point == i || U[point] != MAXF) continue;
+                    if (point == i || L_set[point]) continue;
                     //if point in L continue
                     //solve local problem with this point as unknown and the others as base
                     std::array<Point, MESH_SIZE> base;
@@ -109,6 +109,7 @@ namespace methods {
                         printf("error on convergence\n");
                         return false;
                     }
+                    if (sol.value > U[point]) continue;
                     auto newU = sol.value;
                     U[point] = newU;
                     Point p;
@@ -117,6 +118,7 @@ namespace methods {
                         p[i] = point[i];
                     }
                     minHeap.push(p);
+                    L_set[point] = true;
 
                 }
             }

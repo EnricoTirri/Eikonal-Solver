@@ -9,10 +9,10 @@
 
 class VtkPoint{
 public:
-    std::array<double, 3> vec;
+    std::array<double,3> vec;
     std::vector<double> data;
 
-    VtkPoint(double x, double y, double z) : vec{x, y, z} {}
+    VtkPoint(double x, double y, double z):vec{x,y,z}{}
     VtkPoint(double x, double y, double z, std::vector<double> data) : VtkPoint(x,y,z){
         this->data = std::move(data);
     };
@@ -70,6 +70,7 @@ public:
     void save(std::string const &filename);
 
 private:
-    void ascii_parser(std::ifstream *input);
+    void ascii_parser(std::ifstream  &input);
+    void ascii_saver(std::ofstream  &output);
 };
 #endif //EIKONEL_TEST_MSHPARSER_H

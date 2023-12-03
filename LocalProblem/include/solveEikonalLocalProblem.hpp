@@ -32,9 +32,18 @@ namespace Eikonal {
  */
     template<std::size_t PHDIM, std::size_t MSHDIM>
     class solveEikonalLocalProblem {
+    private:
+        //The problem dimension, is always 2 size less than meshsize
+        static constexpr size_t PRDIM = MSHDIM - 2u;
+
+        Eikonal::Phi<PHDIM, MSHDIM> my_phi;
+        inline static apsc::LineSearchOptions lineSearchOptions;
+        inline static apsc::OptimizationOptions optimizationOptions;
+        inline static std::unique_ptr<apsc::DescentDirectionBase<PRDIM>>
+                descentDirectionFunction = std::make_unique<apsc::DescentDirection<PRDIM>::NewtonDirection>();
+
     public:
-        using Vector = apsc::LineSearch::Traits<MSHDIM - 2u>::Vector;
-        using Matrix = apsc::LineSearch::Traits<PHDIM - 1u>::Matrix;
+        using Vector = apsc::LineSearch::Traits<PRDIM>::Vector;
 
         //! I pass a simplex structure and the values in the constructor
         //! @todo To save memory and time I have to store references in Phi
@@ -45,9 +54,9 @@ namespace Eikonal {
         /*!
          * Solves the local problem
          */
-        EikonalSolution<MSHDIM-2u> operator()() const {
-            apsc::OptimizationData<MSHDIM - 2u> optimizationData;
-            optimizationData.NumberOfVariables = MSHDIM - 2u;
+        EikonalSolution<PRDIM> operator()() const {
+            apsc::OptimizationData<PRDIM> optimizationData;
+            optimizationData.NumberOfVariables = PRDIM;
             optimizationData.costFunction = [this](const Vector &x) {
                 return this->my_phi(x);
             };
@@ -59,9 +68,9 @@ namespace Eikonal {
                 return this->my_phi.hessian(x);
             };
             if constexpr (MSHDIM == 4u) {
-                apsc::OptimizationData<MSHDIM - 2u>::setBounds(optimizationData, {0., 0.}, {1.0, 1.0});
+                apsc::OptimizationData<PRDIM>::setBounds(optimizationData, {0., 0.}, {1.0, 1.0});
             } else {
-                apsc::OptimizationData<MSHDIM - 2u>::setBounds(optimizationData, {0.0}, {1.0});
+                apsc::OptimizationData<PRDIM>::setBounds(optimizationData, {0.0}, {1.0});
             }
 
             //put lambdas = 1/3 all elements in the vector, it is the initial value
@@ -98,14 +107,6 @@ namespace Eikonal {
         static void setOptimizationOptions(apsc::OptimizationOptions const &oop) {
             optimizationOptions = oop;
         }
-
-    private:
-        static constexpr size_t PRDIM = MSHDIM - 2u;
-        Eikonal::Phi<PHDIM, MSHDIM> my_phi;
-        inline static apsc::LineSearchOptions lineSearchOptions;
-        inline static apsc::OptimizationOptions optimizationOptions;
-        inline static std::unique_ptr<apsc::DescentDirectionBase<PRDIM>>
-                descentDirectionFunction = std::make_unique<apsc::DescentDirection<PRDIM>::NewtonDirection>();
     };
 //
 //#if DIMENSION == 2

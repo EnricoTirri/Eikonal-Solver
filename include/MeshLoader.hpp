@@ -24,6 +24,12 @@ struct MeshLoader {
         if (parser.status != 1)
             return 0;
 
+#ifdef MSHLOADER_VERBOSE
+        timespec start, end;
+        clock_gettime(CLOCK_MONOTONIC, &start);
+        printf("\n(MSHLOADER)[LOAD]: Start loading from parser\n");
+#endif
+
         mesh.index.clear();
         mesh.elements.clear();
         mesh.adjacentList.clear();
@@ -32,7 +38,8 @@ struct MeshLoader {
         unordered_map<P, vector<M *>> read;
 
 #ifdef MSHLOADER_VERBOSE
-        cout << "(MSHLOADER): starting loading points ... ";
+        cout << "[LOAD]: starting loading points ... ";
+        cout.flush();
 #endif
 
         for (auto cell: parser.cells) {
@@ -46,7 +53,8 @@ struct MeshLoader {
 
 #ifdef MSHLOADER_VERBOSE
         cout << "end" << endl;
-        cout << "(MSHLOADER): starting loading mesh elements ... ";
+        cout << "[LOAD]: starting loading mesh elements ... ";
+        cout.flush();
 #endif
 
         for (auto &element: mesh.elements) {
@@ -57,7 +65,8 @@ struct MeshLoader {
 
 #ifdef MSHLOADER_VERBOSE
         cout << "end" << endl;
-        cout << "(MSHLOADER): starting loading adjacents ... ";
+        cout << "[LOAD]: starting loading adjacents ... ";
+        cout.flush();
 #endif
 
         size_t k = 0;
@@ -78,6 +87,10 @@ struct MeshLoader {
 
 #ifdef MSHLOADER_VERBOSE
         cout << "end" << endl;
+        clock_gettime(CLOCK_MONOTONIC, &end);
+        auto elapsed = static_cast<double>((end.tv_sec - start.tv_sec));
+        elapsed += static_cast<double>((end.tv_nsec - start.tv_nsec)) / 1000000000.0;
+        printf("(MSHLOADER)[LOAD]: End loading from parser, time elapsed: %f\n\n", elapsed);
 #endif
 
         return 1;
@@ -87,12 +100,17 @@ struct MeshLoader {
     static int dump(const Mesh<DIM, MESHSIZE> &mesh, VtkParser &parser,
                     const unordered_map<P, double> &pointsData,
                     const unordered_map<M, double> &elementData) {
+
         unordered_map<P, int> point_index;
         vector<array<double, 3>> points;
         int i = 0;
 
 #ifdef MSHLOADER_VERBOSE
-        cout << "(MSHLOADER): starting dumping points ... ";
+        timespec start, end;
+        clock_gettime(CLOCK_MONOTONIC, &start);
+        printf("\n(MSHLOADER)[DUMP]: Start dumping to parser\n");
+        cout << "[DUMP]: starting dumping points ... ";
+        cout.flush();
 #endif
 
         for (const auto &pair: mesh.index) {
@@ -106,7 +124,8 @@ struct MeshLoader {
 
 #ifdef MSHLOADER_VERBOSE
         cout << "end" << endl;
-        cout << "(MSHLOADER): starting dumping mesh elements ... ";
+        cout << "[DUMP]: starting dumping mesh elements ... ";
+        cout.flush();
 #endif
 
         vector<vector<int>> cells;
@@ -119,7 +138,8 @@ struct MeshLoader {
 
 #ifdef MSHLOADER_VERBOSE
         cout << "end" << endl;
-        cout << "(MSHLOADER): starting dumping points data ... ";
+        cout << "[DUMP]: starting dumping points data ... ";
+        cout.flush();
 #endif
 
         vector<vector<double>> points_value;
@@ -138,6 +158,13 @@ struct MeshLoader {
         vector<vector<double>> cell_value;
 
         parser.loadMesh(points, cells, points_value, cell_value);
+
+#ifdef MSHLOADER_VERBOSE
+        clock_gettime(CLOCK_MONOTONIC, &end);
+        auto elapsed = static_cast<double>((end.tv_sec - start.tv_sec));
+        elapsed += static_cast<double>((end.tv_nsec - start.tv_nsec)) / 1000000000.0;
+        printf("(MSHLOADER)[DUMP]: End dumping to parser, time elapsed: %f\n\n", elapsed);
+#endif
 
         return 1;
     }

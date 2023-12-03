@@ -33,22 +33,20 @@
 
 int main(int argc, char *argv[]) {
     if (argc < 6) {
-        printf("Usage: %s <filename.vtk> <output.vtk> <pointdim> <meshdim> <x1> <y1> <z1> ... <xn> <yn> <zn>\n",
+        printf("Usage: %s <filename.vtk> <output.vtk> <pointdim> <meshdim> <id1> ... <idn>\n",
                argv[0]);
         return 1;
     }
-
+    bool success = false;
     const char *filename = argv[1];
     const char *output_filename = argv[2];
     const size_t pointdim = std::atoi(argv[3]);
     const size_t meshdim = std::atoi(argv[4]);
 
-    std::vector<std::vector<double>> startingPoints;
+    std::vector<int> startingPoints;
     for (std::size_t i = 5; i < argc; i += pointdim) {
-        std::vector<double> point;
-        for (size_t j = 0; j < pointdim; ++j) {
-            point.push_back(std::atof(argv[i + j]));
-        }
+        int point;
+        point = std::atoi(argv[i]);
         startingPoints.push_back(point);
     }
     //try to open the file
@@ -71,48 +69,48 @@ int main(int argc, char *argv[]) {
         return 1;
     }
 
+
+    VtkParser parser;
+    parser.open(filename);
+
     //correct inputs 2,3 3,3 3,4
     if (pointdim == 2) {
 
         Mesh<2u, 3u> mesh;
         using Point = Eikonal_traits<2u>::Point;
-        std::unordered_map<Point, double> pointData;
-        std::unordered_map<MeshElement<2, 3>, double> elementData;
-
-        VtkParser parser;
-        parser.open(filename);
+        std::vector<double> pointData;
+        std::vector<double> elementData;
 
         if (MeshLoader<2, 3>::load(mesh, parser, pointData, elementData) != 1) {
             printf("unable to load the mesh");
             return 1;
         }
+        parser = VtkParser();
 
         printf("end parsing\n");
 
         //let's try it
-        std::unordered_map<Point, double> U;
-        std::vector<Point> L;
-        std::vector<Point> X;
+        std::vector<double> U(mesh.points.size());
+        std::vector<int> X;
 
-        for (auto &point: startingPoints) {
-            Point p;
-            for (size_t i = 0; i < pointdim; ++i) {
-                p[i] = point[i];
-            }
-            X.emplace_back(p);
+        for (const auto point: startingPoints) {
+
+
+            X.emplace_back(point);
 
         }
 
         timespec start, end;
         clock_gettime(CLOCK_MONOTONIC, &start);
 
-        bool success = methods::FIM<2, 3>(U, X, L, mesh);
+        success = methods::FIM<2, 3>(U, X, mesh);
         clock_gettime(CLOCK_MONOTONIC, &end);
 
         if (success) {
             auto elapsed = static_cast<double>((end.tv_sec - start.tv_sec));
             elapsed += static_cast<double>((end.tv_nsec - start.tv_nsec)) / 1000000000.0;
             printf("end FIM, time elapsed: %f\n", elapsed);
+
 
             MeshLoader<2, 3>::dump(mesh, parser, U, elementData);
             parser.save(output_filename);
@@ -120,41 +118,36 @@ int main(int argc, char *argv[]) {
             printf("FIM failed\n");
         }
         U.clear();
-        L.clear();
     } else if (meshdim == 4)//3,4
     {
         Mesh<3u, 4u> mesh;
         using Point = Eikonal_traits<3u>::Point;
-        std::unordered_map<Point, double> pointData;
-        std::unordered_map<MeshElement<3, 4>, double> elementData;
-
-        VtkParser parser;
-        parser.open(filename);
+        std::vector<double> pointData;
+        std::vector<double> elementData;
 
         if (MeshLoader<3, 4>::load(mesh, parser, pointData, elementData) != 1) {
             printf("unable to load the mesh");
             return 1;
         }
 
+        parser = VtkParser();
+
         printf("end parsing\n");
 
         //let's try it
-        std::unordered_map<Point, double> U;
-        std::vector<Point> L;
-        std::vector<Point> X;
+        std::vector<double> U(mesh.points.size());
 
-        for (auto &point: startingPoints) {
-            Point p;
-            for (size_t i = 0; i < pointdim; ++i) {
-                p[static_cast<long >(i)] = point[i];
-            }
-            X.emplace_back(p);
+        std::vector<int> X;
+
+        for (auto point: startingPoints) {
+
+            X.emplace_back(point);
         }
 
         timespec start, end;
         clock_gettime(CLOCK_MONOTONIC, &start);
 
-        bool success = methods::FIM<3, 4>(U, X, L, mesh);
+        success = methods::FIM<3, 4>(U, X, mesh);
         clock_gettime(CLOCK_MONOTONIC, &end);
 
         if (success) {
@@ -162,53 +155,49 @@ int main(int argc, char *argv[]) {
             elapsed += static_cast<double>((end.tv_nsec - start.tv_nsec)) / 1000000000.0;
             printf("end FIM, time elapsed: %f\n", elapsed);
 
+            parser = VtkParser();
             MeshLoader<3, 4>::dump(mesh, parser, U, elementData);
             parser.save(output_filename);
         } else {
             printf("FIM failed\n");
         }
         U.clear();
-        L.clear();
     } else //3,3
     {
         Mesh<3u, 3u> mesh;
         using Point = Eikonal_traits<3u>::Point;
-        std::unordered_map<Point, double> pointData;
-        std::unordered_map<MeshElement<3, 3>, double> elementData;
-
-        VtkParser parser;
-        parser.open(filename);
+        std::vector<double> pointData;
+        std::vector<double> elementData;
 
         if (MeshLoader<3, 3>::load(mesh, parser, pointData, elementData) != 1) {
             printf("unable to load the mesh");
             return 1;
         }
 
+        parser = VtkParser();
+
         printf("end parsing\n");
 
         //let's try it
-        std::unordered_map<Point, double> U;
-        std::vector<Point> L;
-        std::vector<Point> X;
+        std::vector<double> U(mesh.points.size());
+        std::vector<int> X;
 
         for (auto &point: startingPoints) {
-            Point p;
-            for (size_t i = 0; i < pointdim; ++i) {
-                p[static_cast<long>(i)] = point[i];
-            }
-            X.emplace_back(p);
+
+            X.emplace_back(point);
         }
 
         timespec start, end;
         clock_gettime(CLOCK_MONOTONIC, &start);
 
-        bool success = methods::FIM<3, 3>(U, X, L, mesh);
+        success = methods::FIM<3, 3>(U, X, mesh);
         clock_gettime(CLOCK_MONOTONIC, &end);
 
         if (success) {
             auto elapsed = static_cast<double>((end.tv_sec - start.tv_sec));
             elapsed += static_cast<double>((end.tv_nsec - start.tv_nsec)) / 1000000000.0;
             printf("end FIM, time elapsed: %f\n", elapsed);
+
 
             MeshLoader<3, 3>::dump(mesh, parser, U, elementData);
             parser.save(output_filename);
@@ -216,8 +205,6 @@ int main(int argc, char *argv[]) {
             printf("FIM failed\n");
         }
         U.clear();
-        L.clear();
-
     }
 
     return 0;

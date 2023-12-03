@@ -21,50 +21,52 @@
 //#define MESH_SIZE 4
 #define MAXF 9000000
 namespace methods {
-    template<int DIM>
-    struct EikonalHeapComparator {
-        std::unordered_map<typename Eikonal_traits<DIM>::Point, double> &U;
 
-        explicit EikonalHeapComparator(std::unordered_map<typename Eikonal_traits<DIM>::Point, double> &U) : U(U) {}
+    struct EikonalHeapComparator {
+        std::vector<double> &U;
+
+        explicit EikonalHeapComparator(std::vector<double> &U) : U(U) {}
 
         bool
-        operator()(const typename Eikonal_traits<DIM>::Point &a, const typename Eikonal_traits<DIM>::Point &b) const {
+        operator()(const int a, const int b) const {
             return U[a] > U[b];
         }
     };
 
     template<int DIM, int MESH_SIZE>
-    static bool FIM(std::unordered_map<typename Eikonal_traits<DIM>::Point, double> &U,
-                    std::vector<typename Eikonal_traits<DIM>::Point> X,
-                    std::vector<typename Eikonal_traits<DIM>::Point> L,
+
+
+    static bool FIM(std::vector<double> &U,
+                    std::vector<int> X,
                     const Mesh<DIM, MESH_SIZE> &data) {
 
         typedef typename Eikonal_traits<DIM>::Point Point;
         for (auto &point: X) {
-            if (!data.index.contains(point)) {
-                printf("error on initial point: %f %f does not belong to mesh\n", point.x(), point.y());
+            if (point >= data.index.size()) {
+                printf("error on initial point: %f %f does not belong to mesh\n", data.points[point].x(),
+                       data.points[point].y());
                 return false;
             }
         }
 
         U.reserve(data.index.size());
-        std::priority_queue<typename Eikonal_traits<DIM>::Point, std::vector<typename Eikonal_traits<DIM>::Point>, EikonalHeapComparator<DIM>>
-                minHeap((EikonalHeapComparator<DIM>(U)));
-        for (const auto &i: data.index) {
-            U[i.first] = MAXF;
+        std::priority_queue<int, std::vector<int>, EikonalHeapComparator>
+                minHeap((EikonalHeapComparator(U)));
+        for (int i = 0; i < data.points.size(); i++) {
+            U[i] = MAXF;
         }
         for (const auto &i: X) {
             U[i] = 0;
             minHeap.push(i);
         }
-        std::unordered_map<Point, bool> L_set;
+        std::vector<bool> L_set(data.points.size(), false);
         while (!minHeap.empty()) {
-            Point i = minHeap.top();
+            int i = minHeap.top();
             minHeap.pop();
             //take time value of point p
             double p = U[i];
             //find neighbors of L[i] and get the base (the DIMENSION points with the smallest value of U
-            std::vector<MeshElement<DIM, MESH_SIZE> *> neighbors;
+            std::vector<int> neighbors;
             std::size_t start, end;
             start = data.index.at(i).start;
             end = data.index.at(i).end;
@@ -75,7 +77,7 @@ namespace methods {
             //maybe we can parallelize this
             for (const auto &m_element: neighbors) {
 #pragma unroll MESH_SIZE
-                for (const Point &point: *m_element) {
+                for (auto point: data.elements[m_element]) {
                     if (point == i || L_set[point]) continue;
                     //if point in L continue
                     //solve local problem with this point as unknown and the others as base
@@ -83,11 +85,11 @@ namespace methods {
                     std::size_t k = 0;
                     Eigen::Matrix<double, MESH_SIZE, 1> values;
                     for (std::size_t j = 0; j < MESH_SIZE; j++) {
-                        if ((*m_element)[j] == point) {
-                            base[MESH_SIZE - 1] = point;
+                        if ((data.elements[m_element])[j] == point) {
+                            base[MESH_SIZE - 1] = data.points[point];
                         } else {
-                            base[k] = (*m_element)[j];
-                            values[k] = U[base[k]];
+                            base[k] = data.points[(data.elements[m_element])[j]];
+                            values[k] = U[(data.elements[m_element])[j]];
                             k++;
                         }
                     }
@@ -113,11 +115,11 @@ namespace methods {
                     auto newU = sol.value;
                     U[point] = newU;
                     Point p;
-#pragma unroll
+#pragma unroll DIM
                     for (int i = 0; i < DIM; i++) {
-                        p[i] = point[i];
+                        p[i] = data.points[point][i];
                     }
-                    minHeap.push(p);
+                    minHeap.push(point);
                     L_set[point] = true;
 
                 }
@@ -129,126 +131,12 @@ namespace methods {
     }
 
 
-    template<int DIM, int MESH_SIZE>
-    static bool FIMpp(std::unordered_map<typename Eikonal_traits<DIM>::Point, double> &U,
-                      std::vector<typename Eikonal_traits<DIM>::Point> X,
-                      std::vector<typename Eikonal_traits<DIM>::Point> L,
-                      const Mesh<DIM, MESH_SIZE> &data) {
-        typedef typename Eikonal_traits<DIM>::Point Point;
-        for (auto &point: X) {
-            if (!data.index.contains(point)) {
-                printf("error on initial point: %f %f does not belong to mesh\n", point.x(), point.y());
-                return false;
-            }
-        }
 
-        U.reserve(data.index.size());
+//    //! Patch Mesh
+//    template<int DIM, int MESH_SIZE>
+//    static bool PM();
 
-        ///omp_set_num_threads(_NUM_THREADS);//TODO set macro for
-        for (const auto &i: data.index) {
-            U[i.first] = MAXF;
-        }
-        for (const auto &i: X) {
-            U[i] = 0;
-            L.push_back(i);
-        }
 
-        //2. Update points in L
-        while (!L.empty()) {
-            std::vector<Point> next_L;
-            next_L.clear();
-            bool error = false;
-#pragma omp  parallel for
-            for (const Point &i: L) {
-                //take time value of point p
-                double p = U.at(i);
-                //find neighbors of L[i] and get the base (the DIMENSION points with the smallest value of U
-                std::vector<MeshElement<DIM, MESH_SIZE> *> neighbors;
-                std::size_t start, end;
-                start = data.index.at(i).start;
-                end = data.index.at(i).end;
-                for (std::size_t j = start; j < end; j++) {
-                    neighbors.push_back(data.adjacentList[j]);
-                }
-                //with task maybe we can parallelize this
-                for (const auto &m_element: neighbors) {
-                    for (const Point &point: *m_element) {
-                        if (point == i) continue;
-                        //if point in L continue
-                        //solve local problem with this point as unknown and the others as base
-                        std::array<Point, MESH_SIZE> base;
-                        std::size_t k = 0;
-                        using VectorExt = Eigen::Matrix<double,
-                                MESH_SIZE - 1, 1>;//TODO check if the dimensions are correct;
-
-                        VectorExt values;
-                        for (std::size_t j = 0; j < MESH_SIZE; j++) {
-                            if ((*m_element)[j] == point) {
-                                base[MESH_SIZE - 1] = point;
-                            } else {
-                                base[k] = (*m_element)[j];
-                                k++;
-                            }
-                        }
-                        for (int iter = 0; iter < DIM; iter++) {
-                            values[iter] = U.at(base[iter]);
-                        }
-
-                        typename Eikonal::Eikonal_traits<DIM>::MMatrix M;
-                        if constexpr (DIM == 2)
-                            M << 1.0, 0.0,
-                                    0.0, 1.0;
-                        else if constexpr (DIM == 3)
-                            M << 1.0, 0.0, 0.0,
-                                    0.0, 1.0, 0.0,
-                                    0.0, 0.0, 1.0;
-                        Eikonal::SimplexData<DIM, MESH_SIZE> simplex{base, M};
-
-                        Eikonal::solveEikonalLocalProblem<DIM, MESH_SIZE> solver{std::move(simplex),
-                                                                                 values};
-                        auto sol = solver();
-                        //if no descent direction or no convergence kill the process
-                        if (sol.status != 0) {
-                            printf("error on convergence\n");
-                            error = true;
-                        }
-
-#pragma omp critical (updateU)
-                        {
-
-                            auto newU = sol.value;
-                            if (newU < U.at(point)) {
-
-                                U.at(point) = newU;
-                                // #pragma omp atomic
-                                Point p;
-#pragma omp simd
-#pragma unroll
-                                for (int i = 0; i < DIM; i++) {
-                                    p[i] = point[i];
-                                }
-//#pragma omp critical (updateL)
-                                next_L.emplace_back(p);
-                            }
-                        }
-                    }
-                }
-            }
-            if (error) return false;
-            //remove duplicates from next_L
-            std::sort(next_L.begin(), next_L.end(),
-                      [](const Point &a, const Point &b) {
-                          if (DIM == 2)
-                              return a.x() * 1000000 + a.y() < b.x() * 1000000 + b.y();
-                          else
-                              return a.x() * 1000000 + a.y() * 1000 + a.z() < b.x() * 1000000 + b.y() * 1000 + b.z();
-                      });
-            next_L.erase(std::unique(next_L.begin(), next_L.end()), next_L.end());
-
-            L = std::move(next_L);
-        }
-        return true;
-    }
 
 
 

@@ -6,5 +6,5 @@
 
 namespace Eikonal {
     template<std::size_t DIM, std::size_t MESHSIZE>
-    using MeshElement = std::array<typename Eikonal::Eikonal_traits<DIM>::Point, MESHSIZE>;
+    using MeshElement = std::array<int, MESHSIZE>;
 }

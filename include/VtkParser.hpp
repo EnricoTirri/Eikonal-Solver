@@ -17,6 +17,7 @@ public:
         this->data = std::move(data);
     };
 
+
     double x() const { return vec[0]; }
 
     double y() const { return vec[1]; }
@@ -35,6 +36,8 @@ public:
     VtkCell(int type, std::vector<int> point_ids, std::vector<double> data) : VtkCell(type,std::move(point_ids)){
         this->data = std::move(data);
     }
+
+
 };
 
 
@@ -56,10 +59,6 @@ public:
     //elements info
     std::vector<VtkCell> cells;
 
-    //mesh space-dimension info
-    size_t point_max_d = 0;
-    size_t cell_max_d = 0;
-
     void loadMesh(const std::vector<std::array<double,3>>& points,
               const std::vector<std::vector<int>>& cells,
               const std::vector<std::vector<double>>& point_data,
@@ -69,8 +68,10 @@ public:
 
     void save(std::string const &filename);
 
+
 private:
     void ascii_parser(std::ifstream  &input);
     void ascii_saver(std::ofstream  &output);
 };
-#endif //EIKONEL_TEST_MSHPARSER_H
+
+#endif EIKONEL_TEST_MSHPARSER_H

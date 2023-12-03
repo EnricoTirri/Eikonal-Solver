@@ -37,49 +37,6 @@ namespace std {
             return hashed;
         }
     };
-
-    template<>
-    struct hash<MeshElement<2u, 3u>> {
-        using Point = Eikonal_traits<2u>::Point;
-
-        size_t operator()(const MeshElement<2u, 3u> &k) const {
-            size_t hashed;
-            hashed = hash<Point>()(k[0]);
-            hashed ^= (hash<Point>()(k[1]) + 0x9e3779b1 + (hashed << 6) + (hashed >> 2));
-            hashed ^= (hash<Point>()(k[2]) + 0x9e3779b1 + (hashed << 6) + (hashed >> 2));
-
-            return hashed;
-        }
-    };
-
-
-    template<>
-    struct hash<MeshElement<3u, 3u>> {
-        using Point = Eikonal_traits<3u>::Point;
-
-        size_t operator()(const MeshElement<3u, 3u> &k) const {
-            size_t hashed;
-            hashed = hash<Point>()(k[0]);
-            hashed ^= (hash<Point>()(k[1]) + 0x9e3779b1 + (hashed << 6) + (hashed >> 2));
-            hashed ^= (hash<Point>()(k[2]) + 0x9e3779b1 + (hashed << 6) + (hashed >> 2));
-            return hashed;
-        }
-    };
-
-    template<>
-    struct hash<MeshElement<3u, 4u>> {
-        using Point = Eikonal_traits<3u>::Point;
-        size_t operator()(const MeshElement<3u, 4u> &k) const {
-            size_t hashed;
-            hashed = hash<Point>()(k[0]);
-            hashed ^= (hash<Point>()(k[1]) + 0x9e3779b1 + (hashed << 6) + (hashed >> 2));
-            hashed ^= (hash<Point>()(k[2]) + 0x9e3779b1 + (hashed << 6) + (hashed >> 2));
-            hashed ^= (hash<Point>()(k[3]) + 0x9e3779b1 + (hashed << 6) + (hashed >> 2));
-
-            return hashed;
-        }
-    };
-
 }
 
 typedef struct {
@@ -89,10 +46,11 @@ typedef struct {
 template<std::size_t DIM, std::size_t MESHSIZE>
 class Mesh {
 public:
-    std::vector<MeshElement<DIM, MESHSIZE> *> adjacentList;
-    std::unordered_map<typename Eikonal_traits<DIM>::Point, range_t> index;
+    std::vector<int> adjacentList;
+    std::vector<range_t> index;
+    std::vector<typename Eikonal_traits<DIM>::Point> points;
     std::vector<MeshElement<DIM, MESHSIZE>> elements;
 };
 
 
-#endif //EIKONEL_TEST_MESH_H
+#endif EIKONEL_TEST_MESH_H

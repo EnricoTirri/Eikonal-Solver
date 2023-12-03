@@ -15,12 +15,14 @@ using namespace Eikonal;
 using namespace std;
 
 template<size_t DIM, size_t MESHSIZE>
+//#define DIM 3
+//#define MESHSIZE 3
 struct MeshLoader {
     typedef MeshElement<DIM,MESHSIZE> M;
     typedef Eikonal_traits<DIM>::Point P;
 
     static int load(Mesh<DIM, MESHSIZE> &mesh, const VtkParser &parser,
-                    unordered_map<P, double> &pointsData, unordered_map<M, double> &elementData) {
+                    vector<double> &pointsData, vector<double> &elementData) {
         if (parser.status != 1)
             return 0;
 
@@ -35,20 +37,26 @@ struct MeshLoader {
         mesh.adjacentList.clear();
 
         //support structure for parsing file
-        unordered_map<P, vector<M *>> read;
-
+        std::vector<std::vector<int>> read;
+        read.resize(parser.points.size());
 #ifdef MSHLOADER_VERBOSE
         cout << "[LOAD]: starting loading points ... ";
         cout.flush();
 #endif
 
+
+        for (auto point: parser.points) {
+            P &p = mesh.points.emplace_back();
+#pragma unroll DIM
+            for (int i = 0; i < DIM; ++i)
+                p[i] = point.vec[i];
+        }
+
         for (auto cell: parser.cells) {
             M &m = mesh.elements.emplace_back();
-            for (int i = 0; i < MESHSIZE; ++i) {
-                VtkPoint v_p = parser.points[cell.point_ids[i]];
-                for (int j = 0; j < DIM; ++j)
-                    m[i][j] = v_p.vec[j];
-            }
+#pragma unroll MESHSIZE
+            for (int j = 0; j < MESHSIZE; ++j)
+                m[j] = cell.point_ids[j];
         }
 
 #ifdef MSHLOADER_VERBOSE
@@ -57,9 +65,9 @@ struct MeshLoader {
         cout.flush();
 #endif
 
-        for (auto &element: mesh.elements) {
+        for (int j = 0; j < mesh.elements.size(); ++j) {
             for (int i = 0; i < MESHSIZE; i++) {
-                read[element[i]].push_back(&element);
+                read[mesh.elements[j][i]].push_back(j);
             }
         }
 
@@ -71,19 +79,23 @@ struct MeshLoader {
 
         size_t k = 0;
         size_t prev = 0;
-        for (auto &i: read) {
-            if (k == 0)
-                mesh.index[i.first].start = 0;
-            else
-                mesh.index[i.first].start = prev;
+        mesh.index.resize(parser.points.size());
 
-            for (auto j: i.second) {
+        for (int i = 0; i < read.size(); ++i) {
+            if (k == 0)
+                mesh.index[i].start = 0;
+            else
+                mesh.index[i].start = prev;
+
+            for (auto j: read[i]) {
                 mesh.adjacentList.push_back(j);
                 k++;
             }
-            mesh.index[i.first].end = k;
+            mesh.index[i].end = k;
             prev = k;
         }
+
+        read.clear();
 
 #ifdef MSHLOADER_VERBOSE
         cout << "end" << endl;
@@ -98,8 +110,8 @@ struct MeshLoader {
 
 
     static int dump(const Mesh<DIM, MESHSIZE> &mesh, VtkParser &parser,
-                    const unordered_map<P, double> &pointsData,
-                    const unordered_map<M, double> &elementData) {
+                    const vector<double> &pointsData,
+                    const vector<double> &elementData) {
 
         unordered_map<P, int> point_index;
         vector<array<double, 3>> points;
@@ -113,13 +125,12 @@ struct MeshLoader {
         cout.flush();
 #endif
 
-        for (const auto &pair: mesh.index) {
-            point_index[pair.first] = i;
+//
+        for (const auto &point: mesh.points) {
             array<double, 3> temp = {0, 0, 0};
-            for (int i = 0; i < pair.first.size(); i++)
-                temp[i] = pair.first[i];
+            for (int i = 0; i < DIM; ++i)
+                temp[i] = point[i];
             points.push_back(temp);
-            ++i;
         }
 
 #ifdef MSHLOADER_VERBOSE
@@ -127,12 +138,12 @@ struct MeshLoader {
         cout << "[DUMP]: starting dumping mesh elements ... ";
         cout.flush();
 #endif
-
+//
         vector<vector<int>> cells;
         for (const auto &tri_points: mesh.elements) {
             vector<int> t_cell;
             for (auto &p: tri_points)
-                t_cell.emplace_back(point_index[p]);
+                t_cell.emplace_back(p);
             cells.emplace_back(t_cell);
         }
 
@@ -143,13 +154,18 @@ struct MeshLoader {
 #endif
 
         vector<vector<double>> points_value;
-        for (const auto &pair: mesh.index) {
-            if (pointsData.contains(pair.first)) {
-                vector<double> c_temp;
-                c_temp.emplace_back(pointsData.at(pair.first));
-                points_value.emplace_back(c_temp);
-            }
+        for (const auto &vals: pointsData) {
+            vector<double> temp;
+            temp.emplace_back(vals);
+            points_value.emplace_back(temp);
         }
+//        for (const auto &pair: mesh.index) {
+//            if (pointsData.contains(pair.first)) {
+//                vector<double> c_temp;
+//                c_temp.emplace_back(pointsData.at(pair.first));
+//                points_value.emplace_back(c_temp);
+//            }
+//        }
 
 #ifdef MSHLOADER_VERBOSE
         cout << "end" << endl;

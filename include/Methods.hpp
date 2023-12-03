@@ -21,17 +21,15 @@
 //#define MESH_SIZE 4
 #define MAXF 9000000
 namespace methods {
-    template<int DIM, int MESH_SIZE>
+    template<int DIM>
     struct EikonalHeapComparator {
         std::unordered_map<typename Eikonal_traits<DIM>::Point, double> &U;
 
-        // Constructor to initialize U reference
         explicit EikonalHeapComparator(std::unordered_map<typename Eikonal_traits<DIM>::Point, double> &U) : U(U) {}
 
-        // Comparison function for the min heap
         bool
         operator()(const typename Eikonal_traits<DIM>::Point &a, const typename Eikonal_traits<DIM>::Point &b) const {
-            return U[a] > U[b]; // Min heap based on U values
+            return U[a] > U[b];
         }
     };
 
@@ -50,8 +48,8 @@ namespace methods {
         }
 
         U.reserve(data.index.size());
-        std::priority_queue<typename Eikonal_traits<DIM>::Point, std::vector<typename Eikonal_traits<DIM>::Point>, EikonalHeapComparator<DIM, MESH_SIZE>>
-                minHeap((EikonalHeapComparator<DIM, MESH_SIZE>(U)));
+        std::priority_queue<typename Eikonal_traits<DIM>::Point, std::vector<typename Eikonal_traits<DIM>::Point>, EikonalHeapComparator<DIM>>
+                minHeap((EikonalHeapComparator<DIM>(U)));
         for (const auto &i: data.index) {
             U[i.first] = MAXF;
         }
@@ -59,13 +57,10 @@ namespace methods {
             U[i] = 0;
             minHeap.push(i);
         }
-
-        //2. Update points in L
-        while (!minHeap.empty()
-                ) {
+        std::unordered_map<Point, bool> L_set;
+        while (!minHeap.empty()) {
             Point i = minHeap.top();
             minHeap.pop();
-            bool error = false;
             //take time value of point p
             double p = U[i];
             //find neighbors of L[i] and get the base (the DIMENSION points with the smallest value of U
@@ -77,30 +72,25 @@ namespace methods {
                 neighbors.push_back(data.adjacentList[j]);
             }
 
-            //with task maybe we can parallelize this
+            //maybe we can parallelize this
             for (const auto &m_element: neighbors) {
+#pragma unroll MESH_SIZE
                 for (const Point &point: *m_element) {
-                    if (point == i || U[point] != MAXF) continue;
+                    if (point == i || L_set[point]) continue;
                     //if point in L continue
                     //solve local problem with this point as unknown and the others as base
                     std::array<Point, MESH_SIZE> base;
                     std::size_t k = 0;
                     Eigen::Matrix<double, MESH_SIZE, 1> values;
-                    for (int j = 0; j < DIM; ++j) {
-                        values[j] = 0;
-                    }
                     for (std::size_t j = 0; j < MESH_SIZE; j++) {
                         if ((*m_element)[j] == point) {
                             base[MESH_SIZE - 1] = point;
                         } else {
                             base[k] = (*m_element)[j];
+                            values[k] = U[base[k]];
                             k++;
                         }
                     }
-                    for (int iter = 0; iter < DIM; iter++) {
-                        values[iter] = U[base[iter]];
-                    }
-
                     typename Eikonal::Eikonal_traits<DIM>::MMatrix M;
                     if constexpr (DIM == 2)
                         M << 1.0, 0.0,
@@ -117,24 +107,22 @@ namespace methods {
                     //if no descent direction or no convergence kill the process
                     if (sol.status != 0) {
                         printf("error on convergence\n");
-                        error = true;
+                        return false;
                     }
+                    if (sol.value > U[point]) continue;
                     auto newU = sol.value;
-                    if (newU <
-                        MAXF) {//maybe we can remove this check, we are using a min heap and a fast marching method every point should be updated only once
-                        U[point] = newU;
-                        // #pragma omp atomic
-                        Point p;
+                    U[point] = newU;
+                    Point p;
 #pragma unroll
-                        for (int i = 0; i < DIM; i++) {
-                            p[i] = point[i];
-                        }
-                        minHeap.push(p);
+                    for (int i = 0; i < DIM; i++) {
+                        p[i] = point[i];
                     }
+                    minHeap.push(p);
+                    L_set[point] = true;
+
                 }
             }
 
-            if (error) return false;
 
         }
         return true;

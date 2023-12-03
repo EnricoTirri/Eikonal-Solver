@@ -1,5 +1,6 @@
+#pragma clang diagnostic push
+#pragma ide diagnostic ignored "cert-err34-c"
 #include "LocalProblem/include/SimplexData.hpp"
-#include "LocalProblem/include/solveEikonalLocalProblem.hpp"
 #include "Methods.hpp"
 #include <iostream>
 #include <algorithm>
@@ -31,16 +32,19 @@
 
 
 int main(int argc, char *argv[]) {
-    if (argc < 5) {
-        printf("Usage: %s <filename.vtk> <pointdim> <meshdim> <x1> <y1> <z1> ... <xn> <yn> <zn>\n", argv[0]);
+    if (argc < 6) {
+        printf("Usage: %s <filename.vtk> <output.vtk> <pointdim> <meshdim> <x1> <y1> <z1> ... <xn> <yn> <zn>\n",
+               argv[0]);
         return 1;
     }
 
     const char *filename = argv[1];
-    const size_t pointdim = std::atoi(argv[2]);
-    const size_t meshdim = std::atoi(argv[3]);
+    const char *output_filename = argv[2];
+    const size_t pointdim = std::atoi(argv[3]);
+    const size_t meshdim = std::atoi(argv[4]);
+
     std::vector<std::vector<double>> startingPoints;
-    for (int i = 4; i < argc; i += pointdim) {
+    for (std::size_t i = 5; i < argc; i += pointdim) {
         std::vector<double> point;
         for (size_t j = 0; j < pointdim; ++j) {
             point.push_back(std::atof(argv[i + j]));
@@ -111,9 +115,7 @@ int main(int argc, char *argv[]) {
             printf("end FIM, time elapsed: %f\n", elapsed);
 
             MeshLoader<2, 3>::dump(mesh, parser, U, elementData);
-            std::string outputFilename = filename;
-            outputFilename.replace(outputFilename.end() - 4, outputFilename.end(), "_out.vtk");
-            parser.save(outputFilename);
+            parser.save(output_filename);
         } else {
             printf("FIM failed\n");
         }
@@ -144,7 +146,7 @@ int main(int argc, char *argv[]) {
         for (auto &point: startingPoints) {
             Point p;
             for (size_t i = 0; i < pointdim; ++i) {
-                p[i] = point[i];
+                p[static_cast<long >(i)] = point[i];
             }
             X.emplace_back(p);
         }
@@ -161,9 +163,7 @@ int main(int argc, char *argv[]) {
             printf("end FIM, time elapsed: %f\n", elapsed);
 
             MeshLoader<3, 4>::dump(mesh, parser, U, elementData);
-            std::string outputFilename = filename;
-            outputFilename.replace(outputFilename.end() - 4, outputFilename.end(), "_out.vtk");
-            parser.save(outputFilename);
+            parser.save(output_filename);
         } else {
             printf("FIM failed\n");
         }
@@ -194,7 +194,7 @@ int main(int argc, char *argv[]) {
         for (auto &point: startingPoints) {
             Point p;
             for (size_t i = 0; i < pointdim; ++i) {
-                p[i] = point[i];
+                p[static_cast<long>(i)] = point[i];
             }
             X.emplace_back(p);
         }
@@ -211,9 +211,7 @@ int main(int argc, char *argv[]) {
             printf("end FIM, time elapsed: %f\n", elapsed);
 
             MeshLoader<3, 3>::dump(mesh, parser, U, elementData);
-            std::string outputFilename = filename;
-            outputFilename.replace(outputFilename.end() - 4, outputFilename.end(), "_out.vtk");
-            parser.save(outputFilename);
+            parser.save(output_filename);
         } else {
             printf("FIM failed\n");
         }
@@ -224,3 +222,5 @@ int main(int argc, char *argv[]) {
 
     return 0;
 }
+
+#pragma clang diagnostic pop

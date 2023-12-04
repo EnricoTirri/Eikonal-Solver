@@ -74,4 +74,4 @@ private:
     void ascii_saver(std::ofstream  &output);
 };
 
-#endif EIKONEL_TEST_MSHPARSER_H
+#endif

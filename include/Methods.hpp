@@ -59,10 +59,24 @@ namespace methods {
             U[i] = 0;
             minHeap.push(i);
         }
+
+        int step_count = data.index.size() / 50;
+        int count = 0;
+        int step = 0;
+
         std::vector<bool> L_set(data.points.size(), false);
         while (!minHeap.empty()) {
             int i = minHeap.top();
+            L_set[i]=true;
             minHeap.pop();
+
+            ++count;
+            if(step_count==count-1){
+                step_count =0;
+                step+=2;
+                std::cout << step << "% ";
+            }
+
             //take time value of point p
             double p = U[i];
             //find neighbors of L[i] and get the base (the DIMENSION points with the smallest value of U
@@ -96,7 +110,7 @@ namespace methods {
                     typename Eikonal::Eikonal_traits<DIM>::MMatrix M;
                     if constexpr (DIM == 2)
                         M << 1.0, 0.0,
-                                0.0, 1.0;
+                                0.0, 1;
                     else if constexpr (DIM == 3)
                         M << 1.0, 0.0, 0.0,
                                 0.0, 1.0, 0.0,
@@ -120,13 +134,13 @@ namespace methods {
                         p[i] = data.points[point][i];
                     }
                     minHeap.push(point);
-                    L_set[point] = true;
 
                 }
             }
 
 
         }
+        std::cout << std::endl;
         return true;
     }
 

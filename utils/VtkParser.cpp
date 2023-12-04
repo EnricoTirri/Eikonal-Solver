@@ -185,21 +185,21 @@ void VtkParser::ascii_saver(ofstream &out) {
         return;
     }
 
-    out << header << endl;
-    out << description << endl;
-    out << filetype << endl;
-    out << "DATASET " << dataset_type << endl;
-    out << endl;
+    out << header << '\n';
+    out << description << '\n';
+    out << filetype << '\n';
+    out << "DATASET " << dataset_type << '\n';
+    out << '\n';
 
-    out << "POINTS " << points.size() << " float" << endl;
+    out << "POINTS " << points.size() << " float" << '\n';
 #ifdef PARSER_VERBOSE
     cout << "[SAVE]: starting saving points ... ";
     cout.flush();
 #endif
     for (auto &point: points) {
-        out << point.x() << " " << point.y() << " " << point.z() << endl;
+        out << point.x() << " " << point.y() << " " << point.z() << '\n';
     }
-    out << endl;
+    out << '\n';
 #ifdef PARSER_VERBOSE
     cout << "end" << endl;
     cout << "[SAVE]: starting saving cells ... ";
@@ -210,15 +210,15 @@ void VtkParser::ascii_saver(ofstream &out) {
         ++cell_number_size;
         cell_number_size += cell.point_ids.size();
     }
-    out << "CELLS " << cells.size() << " " << cell_number_size << endl;
+    out << "CELLS " << cells.size() << " " << cell_number_size << '\n';
     for (const auto &cell: cells) {
         out << cell.point_ids.size();
         for (auto id: cell.point_ids) {
             out << " " << id;
         }
-        out << endl;
+        out << '\n';
     }
-    out << endl;
+    out << '\n';
 
 #ifdef PARSER_VERBOSE
     cout << "end" << endl;
@@ -226,11 +226,11 @@ void VtkParser::ascii_saver(ofstream &out) {
     cout.flush();
 #endif
 
-    out << "CELL_TYPES " << cells.size() << endl;
+    out << "CELL_TYPES " << cells.size() << '\n';
     for (const auto &cell: cells) {
-        out << cell.type << endl;
+        out << cell.type << '\n';
     }
-    out << endl;
+    out << '\n';
 
 #ifdef PARSER_VERBOSE
     cout << "end" << endl;
@@ -246,15 +246,15 @@ void VtkParser::ascii_saver(ofstream &out) {
         cout << "[SAVE]: starting saving points data ... ";
         cout.flush();
 #endif
-        out << "POINT_DATA " << point_data_size << endl;
-        out << "SCALARS points_table float 1" << endl;
-        out << "LOOKUP_TABLE points_table" << endl;
+        out << "POINT_DATA " << point_data_size << '\n';
+        out << "SCALARS points_table float 1" << '\n';
+        out << "LOOKUP_TABLE points_table" << '\n';
         for (const auto &point: points) {
             for (auto value: point.data)
                 out << " " << value;
-            out << endl;
+            out << '\n';
         }
-        out << endl;
+        out << '\n';
 
 #ifdef PARSER_VERBOSE
         cout << "end" << endl;
@@ -272,8 +272,8 @@ void VtkParser::ascii_saver(ofstream &out) {
         cout.flush();
 #endif
 
-        out << "CELL_DATA " << cell_data_size << endl;
-        out << "SCALARS cells_table float 1" << endl;
+        out << "CELL_DATA " << cell_data_size << '\n';
+        out << "SCALARS cells_table float 1" << '\n';
         out << "LOOKUP_TABLE cells_table" << endl;
         for (const auto &cell: cells) {
             for (auto value: cell.data)

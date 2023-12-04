@@ -32,6 +32,7 @@
 
 
 int main(int argc, char *argv[]) {
+    std::ios::sync_with_stdio(false);
     if (argc < 6) {
         printf("Usage: %s <filename.vtk> <output.vtk> <pointdim> <meshdim> <id1> ... <idn>\n",
                argv[0]);

@@ -65,16 +65,19 @@ namespace methods {
         int step = 0;
 
         std::vector<bool> L_set(data.points.size(), false);
+        std::vector<bool> L_in(data.points.size(), false);
         while (!minHeap.empty()) {
             int i = minHeap.top();
-            L_set[i]=true;
             minHeap.pop();
-
+            L_set[i] = true;
             ++count;
+            //   std::cout << count << " " << i << std::endl;
             if(step_count==count-1){
-                step_count =0;
+                count = 0;
                 step+=2;
+                std::cout << '\r';
                 std::cout << step << "% ";
+                std::cout.flush();
             }
 
             //take time value of point p
@@ -110,7 +113,7 @@ namespace methods {
                     typename Eikonal::Eikonal_traits<DIM>::MMatrix M;
                     if constexpr (DIM == 2)
                         M << 1.0, 0.0,
-                                0.0, 1;
+                                0.0, 1.;
                     else if constexpr (DIM == 3)
                         M << 1.0, 0.0, 0.0,
                                 0.0, 1.0, 0.0,
@@ -124,6 +127,7 @@ namespace methods {
                     if (sol.status != 0) {
                         printf("error on convergence\n");
                         return false;
+                        // continue;
                     }
                     if (sol.value > U[point]) continue;
                     auto newU = sol.value;
@@ -133,7 +137,10 @@ namespace methods {
                     for (int i = 0; i < DIM; i++) {
                         p[i] = data.points[point][i];
                     }
-                    minHeap.push(point);
+                    if (!L_in[point]) {
+                        L_in[point] = true;
+                        minHeap.push(point);
+                    }
 
                 }
             }

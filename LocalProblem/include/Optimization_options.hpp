@@ -19,7 +19,7 @@ namespace apsc {
         using Scalar = apsc::LineSearch::Scalar;
         Scalar relTol = 1.e-5; //!< relative tolerance
         Scalar absTol = 1.e-5; //!< absolute tolerance
-        unsigned int maxIter = 500;  //!< max n. of Iteration
+        unsigned int maxIter = 500000;  //!< max n. of Iteration
         //@todo method to read from file
     };
 

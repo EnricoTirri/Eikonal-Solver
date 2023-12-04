@@ -53,7 +53,7 @@ namespace Eikonal {
                    simplexData.MM_Matrix.template block<DIM, DIM+1>(0, 0) * lambdaExt / normL();
         }
 
-        Eikonal_traits<DIM>::MMatrix hessian(Eikonal_traits<DIM>::Vector const &v) const {
+        typename Eikonal_traits<DIM>::MMatrix hessian(typename Eikonal_traits<DIM>::Vector const &v) const {
             lambdaExt.template topRows<DIM>() = v;
             auto n = 1. / normL();
             auto n3 = n * n * n;
@@ -73,10 +73,11 @@ namespace Eikonal {
 
     private:
         SimplexData<PHDIM, MSHDIM> simplexData;
-        Eikonal_traits<MSHDIM>::Vector values;
-        Eikonal_traits<MSHDIM-1>::Vector du;
+        typename Eikonal_traits<MSHDIM>::Vector values;
+        typename Eikonal_traits<MSHDIM - 1>::Vector du;
 
-        mutable Eikonal_traits<MSHDIM-1>::Vector lambdaExt;    // can change value from a const function because declared as mutable
+        mutable typename Eikonal_traits<
+                MSHDIM - 1>::Vector lambdaExt;    // can change value from a const function because declared as mutable
     };
 }
 

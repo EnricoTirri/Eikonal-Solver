@@ -34,9 +34,7 @@ namespace methods {
     };
 
     template<int DIM, int MESH_SIZE>
-
-
-    static bool FIM(std::vector<double> &U,
+    static bool FMM(std::vector<double> &U,
                     std::vector<int> X,
                     const Mesh<DIM, MESH_SIZE> &data) {
 
@@ -153,129 +151,19 @@ namespace methods {
 
 
 
+
 //    //! Patch Mesh
 //    template<int DIM, int MESH_SIZE>
 //    static bool PM();
 
-
-
-
-
     //!Fast sweeping method
-#undef DIM
-#undef MESH_SIZE
-
-    template<std::size_t DIM, std::size_t MESH_SIZE>
+    template<int DIM, int MESH_SIZE>
     bool FSM(std::unordered_map<typename Eikonal::Eikonal_traits<DIM>::Point, double> &U,
              std::vector<typename Eikonal::Eikonal_traits<DIM>::Point> X,
              std::vector<typename Eikonal::Eikonal_traits<DIM>::Point> L,
              const Mesh<DIM, MESH_SIZE> &data) {
-        typedef typename Eikonal::Eikonal_traits<DIM>::Point Point;
-
-        for (auto &point: X) {
-            if (!data.index.contains(point)) {
-                printf("error on initial point: %f %f does not belong to mesh\n", point.x(), point.y());
-                return false;
-            }
-        }
-
-        U.reserve(data.index.size());
-
-//#pragma omp parallel for
-        for (const auto &i: data.index) {
-            U.insert({i.first, MAXF});
-        }
-        for (const auto &i: X) {
-            U[i] = 0;
-            L.push_back(i);
-        }
-        //heapify L, so that the smallest value is at the top
-        std::make_heap(L.begin(), L.end(), [&U](const Point &a, const Point &b) {
-            return U[a] < U[b];
-        });
-
-
-        //2. Update points in L
-        while (!L.empty()) {
-            Point i = L.back();
-            L.pop_back();
-
-            //take time value of point p
-            double p = U[i];
-            //find neighbors of L[i] and get the base (the DIMENSION points with the smallest value of U
-            std::vector<MeshElement<DIM, MESH_SIZE> *> neighbors;
-            std::size_t start, end;
-            start = data.index.at(i).start;
-            end = data.index.at(i).end;
-            for (std::size_t j = start; j < end; j++) {
-                neighbors.push_back(data.adjacentList[j]);
-            }
-
-            //with task maybe we can parallelize this
-            for (const auto &m_element: neighbors) {
-                for (const Point &point: *m_element) {
-                    if (point == i) continue;
-                    //if point in L continue
-                    //solve local problem with this point as unknown and the others as base
-                    std::array<Point, MESH_SIZE> base;
-
-                    std::size_t k = 0;
-                    typename Eikonal::Eikonal_traits<DIM>::VectorExt values;
-                    for (std::size_t j = 0; j < MESH_SIZE; j++) {
-                        if ((*m_element)[j] == point) {
-                            base[MESH_SIZE - 1] = point;
-                        } else {
-                            base[k] = (*m_element)[j];
-                            k++;
-                        }
-                    }
-                    for (int iter = 0; iter < DIM; iter++) {
-                        values[iter] = U[base[iter]];
-                    }
-
-                    typename Eikonal::Eikonal_traits<DIM>::MMatrix M;
-                    if constexpr (DIM == 2)
-                        M << 1.0, 0.0,
-                                0.0, 1.0;
-                    else if constexpr (DIM == 3)
-                        M << 1.0, 0.0, 0.0,
-                                0.0, 1.0, 0.0,
-                                0.0, 0.0, 1.0;
-
-                    Eikonal::SimplexData<DIM, MESH_SIZE> simplex{base, M};
-                    Eikonal::solveEikonalLocalProblem<DIM, MESH_SIZE> solver{std::move(simplex),
-                                                                             values};
-                    auto sol = solver();
-                    //if no descent direction or no convergence kill the process
-                    if (sol.status != 0) {
-                        printf("error on convergence\n");
-                        return false;
-                    }
-                    auto newU = sol.value;
-
-                    if (newU < U[point]) {
-                        U[point] = newU;
-                        // #pragma omp atomic
-                        Point p;
-#pragma unroll
-                        for (int i = 0; i < DIM; i++) {
-                            p[i] = point[i];
-                        }
-                        //add element to heap L
-                        L.emplace_back(p);
-                        //L.emplace_back(p);
-                    }
-                }
-            }
-
-            //heapify L, so that the smallest value is at the top
-            std::make_heap(L.begin(), L.end(), [&U](const Point &a, const Point &b) {
-                return U[a] > U[b];
-            });
-        }
-        return true;
-
     }
+
 
 
 }

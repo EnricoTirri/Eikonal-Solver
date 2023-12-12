@@ -95,28 +95,26 @@ int main(int argc, char *argv[]) {
         std::vector<int> X;
 
         for (const auto point: startingPoints) {
-
-
             X.emplace_back(point);
-
+            printf("starting point: %f %f\n", mesh.points[point][0], mesh.points[point][1]);
         }
 
         timespec start, end;
         clock_gettime(CLOCK_MONOTONIC, &start);
 
-        success = methods::FIM<2, 3>(U, X, mesh);
+        success = methods::FMM<2, 3>(U, X, mesh);
         clock_gettime(CLOCK_MONOTONIC, &end);
 
         if (success) {
             auto elapsed = static_cast<double>((end.tv_sec - start.tv_sec));
             elapsed += static_cast<double>((end.tv_nsec - start.tv_nsec)) / 1000000000.0;
-            printf("end FIM, time elapsed: %f\n", elapsed);
+            printf("end FMM, time elapsed: %f\n", elapsed);
 
 
             MeshLoader<2, 3>::dump(mesh, parser, U, elementData);
             parser.save(output_filename);
         } else {
-            printf("FIM failed\n");
+            printf("FMM failed\n");
         }
         U.clear();
     } else if (meshdim == 4)//3,4
@@ -148,19 +146,19 @@ int main(int argc, char *argv[]) {
         timespec start, end;
         clock_gettime(CLOCK_MONOTONIC, &start);
 
-        success = methods::FIM<3, 4>(U, X, mesh);
+        success = methods::FMM<3, 4>(U, X, mesh);
         clock_gettime(CLOCK_MONOTONIC, &end);
 
         if (success) {
             auto elapsed = static_cast<double>((end.tv_sec - start.tv_sec));
             elapsed += static_cast<double>((end.tv_nsec - start.tv_nsec)) / 1000000000.0;
-            printf("end FIM, time elapsed: %f\n", elapsed);
+            printf("end FMM, time elapsed: %f\n", elapsed);
 
             parser = VtkParser();
             MeshLoader<3, 4>::dump(mesh, parser, U, elementData);
             parser.save(output_filename);
         } else {
-            printf("FIM failed\n");
+            printf("FMM failed\n");
         }
         U.clear();
     } else //3,3
@@ -191,19 +189,19 @@ int main(int argc, char *argv[]) {
         timespec start, end;
         clock_gettime(CLOCK_MONOTONIC, &start);
 
-        success = methods::FIM<3, 3>(U, X, mesh);
+        success = methods::FMM<3, 3>(U, X, mesh);
         clock_gettime(CLOCK_MONOTONIC, &end);
 
         if (success) {
             auto elapsed = static_cast<double>((end.tv_sec - start.tv_sec));
             elapsed += static_cast<double>((end.tv_nsec - start.tv_nsec)) / 1000000000.0;
-            printf("end FIM, time elapsed: %f\n", elapsed);
+            printf("end FMM, time elapsed: %f\n", elapsed);
 
 
             MeshLoader<3, 3>::dump(mesh, parser, U, elementData);
             parser.save(output_filename);
         } else {
-            printf("FIM failed\n");
+            printf("FMM failed\n");
         }
         U.clear();
     }

@@ -8,7 +8,6 @@
 #include <Eigen/Core>
 #include <vector>
 #include <memory>
-#include <Mesh_traits.hpp>
 
 
 using namespace Eikonal;
@@ -46,10 +45,12 @@ typedef struct {
 template<std::size_t DIM, std::size_t MESHSIZE>
 class Mesh {
 public:
+    using MeshElement = std::array<int,MESHSIZE>;
+
     std::vector<int> adjacentList;
     std::vector<range_t> index;
     std::vector<typename Eikonal_traits<DIM>::Point> points;
-    std::vector<MeshElement<DIM, MESHSIZE>> elements;
+    std::vector<MeshElement> elements;
 };
 
 

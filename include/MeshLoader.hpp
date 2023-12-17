@@ -18,7 +18,8 @@ template<size_t DIM, size_t MESHSIZE>
 //#define DIM 3
 //#define MESHSIZE 3
 struct MeshLoader {
-    typedef MeshElement<DIM,MESHSIZE> M;
+
+    typedef Mesh<DIM,MESHSIZE>::MeshElement M;
     typedef Eikonal_traits<DIM>::Point P;
 
     static int load(Mesh<DIM, MESHSIZE> &mesh, const VtkParser &parser,

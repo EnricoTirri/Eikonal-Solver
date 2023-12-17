@@ -13,7 +13,6 @@
 #ifndef TYPE
 #define TYPE 2
 #endif
-#undef DIMENSION
 
 // now we will implement this algorithm Fast iterative method (X,L)
 // define hash function for Point
@@ -34,7 +33,7 @@ int main(int argc, char *argv[])
     std::ios::sync_with_stdio(false);
     if (argc < 6)
     {
-        printf("Usage: %s <filename.vtk> <output.vtk> <pointdim> <meshdim> <id1> ... <idn>\n",
+        printf("Usage: %s <filename.vtk> <output.vtk> <pointdim> <meshdim> <useparallel> <id1> [<id2> ...]\n",
                argv[0]);
         return 1;
     }

@@ -1,22 +1,22 @@
 cmake_minimum_required(VERSION 3.27)
-project(eikonal_test)
+project(eikonal_solver)
 
 set(CMAKE_CXX_STANDARD 23)
-include_directories("include")
-include_directories("LocalProblem/include")
-file(GLOB SOURCES "LocalProblem/*.cpp")
-file(GLOB INNCLUDESLP "LocalProblem/include/*.hpp")
-file(GLOB UTILSOURCES "utils/*.cpp")
-file(GLOB HEADERS "include/*.h")
-file(GLOB HPPEADERS "include/*.hpp")
-#also add all cpp file in /
-#add all to executable
-#add_compile_definitions(DIMENSION=3)
-#flags
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3  -march=native  -funroll-loops")
-add_executable(eikonal_test main.cpp
-        ${SOURCES} ${UTILSOURCES})
 
-target_sources(eikonal_test PRIVATE ${SOURCES} PRIVATE ${UTILSOURCES} PRIVATE ${HEADERS} PRIVATE ${HPPEADERS} PRIVATE ${INNCLUDESLP})
-#compile with macro DIMENSION=2
-add_compile_definitions(DIMENSION=3)
+if(${VERBOSE_SOLVER})
+    add_compile_definitions(VERBOSE true)
+endif ()
+if(${VERBOSE})
+    add_compile_definitions(PARSER_VERBOSE true)
+    add_compile_definitions(MSHLOADER_VERBOSE true)
+endif ()
+
+include_directories("LocalProblem/include")
+include_directories(${EIGEN_PATH})
+include_directories("include")
+
+file(GLOB SOURCES "src/*.cpp")
+
+set(ENV{OMP_NUM_THREADS} ${OMP_NUM_THREADS})
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}  -march=native -funroll-loops -fopenmp")
+add_executable(eikonal_solver main.cpp ${SOURCES})

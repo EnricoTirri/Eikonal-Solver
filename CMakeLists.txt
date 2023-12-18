@@ -18,5 +18,5 @@ include_directories("include")
 file(GLOB SOURCES "src/*.cpp")
 
 set(ENV{OMP_NUM_THREADS} ${OMP_NUM_THREADS})
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}  -march=native -funroll-loops -fopenmp")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3  -march=native -funroll-loops -fopenmp")
 add_executable(eikonal_solver main.cpp ${SOURCES})

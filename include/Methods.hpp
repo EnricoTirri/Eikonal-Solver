@@ -23,18 +23,25 @@
 
 
 
-#define MAXF 9000000
 namespace methods {
 
-    typedef struct {
-        size_t point;
-        double value;
-    } ParallelStruct;
+	class ParallelStruct {
+	public:
+		size_t point;
+		double value;
 
-    struct EikonalHeapComparator {
+		// Constructor with default values
+		ParallelStruct(size_t p = 0, double v = 0.0) : point(p), value(v) {}
+
+
+	};
+
+
+	class EikonalHeapComparator {
         std::vector<double> &U;
 
-        explicit EikonalHeapComparator(std::vector<double> &U) : U(U) {}
+	public:
+		explicit EikonalHeapComparator(std::vector<double> &U) : U(U) {}
 
         bool
         operator()(const int a, const int b) const {
@@ -46,8 +53,8 @@ namespace methods {
     static bool FMM(std::vector<double> &U,
                     std::vector<int> X,
                     const Mesh<DIM, MESH_SIZE> &data) {
-
-        typedef typename Eikonal_traits<DIM>::Point Point;
+	    constexpr double MAXF = 9000000;
+	    using Point = typename Eikonal_traits<DIM>::Point;
         for (auto &point: X) {
             if (point >= data.index.size()) {
                 printf("error on initial point: %f %f does not belong to mesh\n", data.points[point].x(),
@@ -163,8 +170,9 @@ namespace methods {
                             std::vector<int> X,
                             const Mesh<DIM, MESH_SIZE> &data)
     {
+	    constexpr double MAXF = 9000000;
 
-        typedef typename Eikonal_traits<DIM>::Point Point;
+	    using Point = typename Eikonal_traits<DIM>::Point;
         for (auto &point : X)
         {
             if (point >= data.index.size())
@@ -200,7 +208,6 @@ namespace methods {
             minHeap.pop();
             L_set[i] = true;
             ++count;
-            //   std::cout << count << " " << i << std::endl;
             if (step_count == count - 1)
             {
                 count = 0;
@@ -223,20 +230,6 @@ namespace methods {
             }
             bool error = false;
             // maybe we can parallelize this
-            /*
-            int indicediesec=0;
-            for (const auto &m_element : neighbors)
-            {
-                for (auto point:data.elements[m_element]){
-                    if(!(point ==i || L_set[point])){
-                        if(data.esecuziona==0){
-                            data.esecuziona=indicediesec;
-                            indicediesec++;
-                        }
-                    }
-                }
-            }
-            */
 
             ParallelStruct parallelarray[neighbors.size()][MESH_SIZE];
 
@@ -247,9 +240,7 @@ namespace methods {
                 {
                     const auto point = data.elements[neighbors[index1]][index2];
                     const auto m_element=neighbors[index1];
-                    ParallelStruct p;
-                    p.point = point;
-                    p.value = MAXF;
+	                ParallelStruct p(point, MAXF);
                     parallelarray[index1][index2] = p;
 
                     if (point == i || L_set[point])
@@ -292,7 +283,6 @@ namespace methods {
                         error = true;
                         // continue;
                     }
-                    bool maggiore = false;
                     p.value = sol.value;
 
                     parallelarray[index1][index2] = p;

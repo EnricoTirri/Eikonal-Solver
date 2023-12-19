@@ -64,7 +64,8 @@ int main(int argc, char *argv[]) {
         std::vector<double> pointData;
         std::vector<double> elementData;
 
-        if (MeshLoader<2, 3>::load(mesh, parser, pointData, elementData) != 1) {
+        MeshLoader<2,3> loader;
+        if (loader.load(mesh, parser, pointData, elementData) != 1) {
             printf("unable to load the mesh");
             return 1;
         }
@@ -92,7 +93,8 @@ int main(int argc, char *argv[]) {
             elapsed += static_cast<double>((end.tv_nsec - start.tv_nsec)) / 1000000000.0;
             printf("end solver, time elapsed: %f\n", elapsed);
 
-            MeshLoader<2, 3>::dump(mesh, parser, U, elementData);
+
+            loader.dump(mesh, parser, U, elementData);
             parser.save(output_filename);
         } else {
             printf("solver failed\n");
@@ -104,7 +106,8 @@ int main(int argc, char *argv[]) {
         std::vector<double> pointData;
         std::vector<double> elementData;
 
-        if (MeshLoader<3, 4>::load(mesh, parser, pointData, elementData) != 1) {
+        MeshLoader<3,4> loader;
+        if (loader.load(mesh, parser, pointData, elementData) != 1) {
             printf("unable to load the mesh");
             return 1;
         }
@@ -136,7 +139,7 @@ int main(int argc, char *argv[]) {
             printf("end solver, time elapsed: %f\n", elapsed);
 
             parser = VtkParser();
-            MeshLoader<3, 4>::dump(mesh, parser, U, elementData);
+            loader.dump(mesh, parser, U, elementData);
             parser.save(output_filename);
         } else {
             printf("solver failed\n");
@@ -149,7 +152,8 @@ int main(int argc, char *argv[]) {
         std::vector<double> pointData;
         std::vector<double> elementData;
 
-        if (MeshLoader<3, 3>::load(mesh, parser, pointData, elementData) != 1) {
+        MeshLoader<3,3> loader;
+        if (loader.load(mesh, parser, pointData, elementData) != 1) {
             printf("unable to load the mesh");
             return 1;
         }
@@ -179,7 +183,7 @@ int main(int argc, char *argv[]) {
             elapsed += static_cast<double>((end.tv_nsec - start.tv_nsec)) / 1000000000.0;
             printf("end solver, time elapsed: %f\n", elapsed);
 
-            MeshLoader<3, 3>::dump(mesh, parser, U, elementData);
+            loader.dump(mesh, parser, U, elementData);
             parser.save(output_filename);
         } else {
             printf("solver failed\n");

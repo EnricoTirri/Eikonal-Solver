@@ -35,9 +35,7 @@ where:
 - $\Gamma$ is a sub set the the boundaries of the domain
 
 On most cases we have:
-$$
-H(x,\nabla u(x)) = \left|\nabla u(x)\right|_M = \sqrt{\nabla u(x)^TM(x)\nabla u(x)}
-$$
+$$H(x, \nabla u(x)) = |\nabla u(x)|_{M} = \sqrt{(\nabla u(x))^{T} M(x) \nabla u(x)}$$
 
 where M is a symmetric positive definite function.
 

@@ -18,7 +18,7 @@ include_directories("include")
 file(GLOB SOURCES "src/*.cpp")
 
 
-if (NOT DEFINED ENV{OMP_NUM_THREADS})
+if (NOT DEFINED ${OMP_NUM_THREADS})
     set(OMP_NUM_THREADS 1)
 endif ()
 set(ENV{OMP_NUM_THREADS} ${OMP_NUM_THREADS})

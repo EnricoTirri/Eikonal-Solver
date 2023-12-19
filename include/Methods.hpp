@@ -388,8 +388,7 @@ namespace methods {
 				const auto point = activepoints[index1].punto;
 				for (size_t index2 = 0; index2 < activepoints[index1].elements.size(); ++index2) {
 					const auto m_element = activepoints[index1].elements[index2];
-					if (point == i || L_set[point])
-						continue;
+
 					// if point in L continue
 					// solve local problem with this point as unknown and the others as base
 					std::array<Point, MESH_SIZE> base;

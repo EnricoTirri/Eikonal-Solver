@@ -19,10 +19,12 @@ In most generic term, the problem is:
 
 Find $u$ that satisfies:
 
-$$\begin{cases}
+$$
+\begin{cases}
 H(x, \nabla u(x)) = 1 & \quad x \in \Omega \subset \mathbb{R}^d \\  
 u(x) = g(x) & \quad x \in \Gamma \subset \partial\Omega
-\end{cases} $$
+\end{cases}
+$$
 
 where:
 - $d$ is the dimension of the physical space

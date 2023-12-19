@@ -17,6 +17,10 @@ include_directories("include")
 
 file(GLOB SOURCES "src/*.cpp")
 
+
+if (NOT DEFINED ENV{OMP_NUM_THREADS})
+    set(OMP_NUM_THREADS 1)
+endif ()
 set(ENV{OMP_NUM_THREADS} ${OMP_NUM_THREADS})
 add_compile_definitions(N_THREADS=${OMP_NUM_THREADS})
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3  -march=native -funroll-loops -fopenmp -ltbb")

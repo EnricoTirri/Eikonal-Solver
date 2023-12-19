@@ -98,15 +98,12 @@ where:
 * `[id2 ...]` - optional list of other starting points
 
 ### Examples showcase 
+##### Triangular Mesh on 2D space
 <img src="showcase/triangles2d.png" width="500"/>
 
-##### Triangular Mesh on 2D space
-
-
+##### Triangular Mesh on 3D space
 <img src="showcase/triangles3d.png" width="500"/>
 
-##### Triangular Mesh on 3D space
-
+##### Tetrahedral Mesh on 3D space
 <img src="showcase/tetrahedron3d.png" width="500"/>
 
-##### Tetrahedral Mesh on 3D space

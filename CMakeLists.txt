@@ -17,15 +17,16 @@ include_directories("include")
 
 file(GLOB SOURCES "src/*.cpp")
 
-if (NOT DEFINED ${OMP_NUM_THREADS})
+if (NOT DEFINED OMP_NUM_THREADS)
     set(OMP_NUM_THREADS 1)
 endif ()
 
-if (NOT DEFINED ${METHOD})
-    set(METHOD FMM)
+if (NOT DEFINED METHOD)
+    set(METHOD FMM
+    )
 endif()
 
-if (${METHOD} STREQUAL "FMMP" OR ${METHOD} STREQUAL "fmmp")
+if ((${METHOD} STREQUAL "FMMP") OR (${METHOD} STREQUAL "fmmp"))
     add_compile_definitions(FMMP)
 elseif (${METHOD} STREQUAL "FMMP2" OR ${METHOD} STREQUAL "fmmp2")
     add_compile_definitions(FMMP2)

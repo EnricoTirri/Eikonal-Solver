@@ -35,9 +35,7 @@ where:
 - $\Gamma$ is a sub set the the boundaries of the domain
 
 On most cases we have:
-$$
-H(x,\nabla u(x)) = \left|\nabla u(x)\right|_M = \sqrt{\nabla u(x)^TM(x)\nabla u(x)}
-$$
+$$H(x, \nabla u(x)) = |\nabla u(x)|_{M} = \sqrt{(\nabla u(x))^{T} M(x) \nabla u(x)}$$
 
 where M is a symmetric positive definite function.
 
@@ -102,13 +100,13 @@ where:
 ### Examples showcase 
 <img src="showcase/triangles2d.png" width="500"/>
 
-#####Triangular Mesh on 2D space
+##### Triangular Mesh on 2D space
 
 
 <img src="showcase/triangles3d.png" width="500"/>
 
-#####Triangular Mesh on 3D space
+##### Triangular Mesh on 3D space
 
 <img src="showcase/tetrahedron3d.png" width="500"/>
 
-#####Tetrahedral Mesh on 3D space
+##### Tetrahedral Mesh on 3D space

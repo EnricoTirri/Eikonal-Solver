@@ -56,7 +56,7 @@ where $c$ represents the celerity of the wave.
     * `Mesh.h` - defines the data structure containing the mesh
     * `VtkParser.hpp` - defines data structure and methods in order to parse a .vtk file
     * `MeshLoader.hpp` - defines methods in order to load a mesh from a file parser
-    * `Methods.hpp` - defines Eikonal global solver methods
+    * `EikonalSolver.hpp` - defines Eikonal global solver
 * `LocalProblem` - Eikonal local solver library, created by [prof. Formaggia Luca](https://github.com/lformaggia) and modified to accomodate all combination of space dimension and mesh (triangular or tetrahedral)
 * `src` - source file of headers implementation
 
@@ -76,17 +76,24 @@ $ make
 * `-D OMP_NUM_THREADS=_num_threads_` - specify the number of threads used by omp implementation
 * `-D VERBOSE=true/false` - specify if show vtk parser and mesh loader work-messages
 * `-D VERBOSE_SOLVER=true/false` - specify if show local solver work-messages
+* `-D METHOD=_METHOD_TAG_` - specify the solver method that has to be compiled (default = FMM)
+* `-D EXE_NAME='_exe_filename_'` - specify the executable filename (default = eikonal_solver_'method_tag')
+
+`_METHOD_TAG_` are:
+* `FMM` - Fast Marching Method
+* `FMMP` - Fast Marching Omp-Parallel Method
+* `FMMP2` - Fast Marching Omp-Parallel Method V2
+
 ### How to run
 
 ```bash
-$ ./eikonal_solver input.vtk output.vtk pointdim meshdim useparallel id1 [id2 ...]
+$ ./eikonal_solver_* input.vtk output.vtk pointdim meshdim id1 [id2 ...]
 ```
 where:
 * `input.vtk` - is a path/filename to ASCII formatted .vtk input mesh file
 * `output.vtk` - is the path/filename where output (mesh + data) will be placed
 * `pointdim` - is the space dimension (2=2D space, 3=3D space)
 * `meshdim` - is the mesh size (3=triangular mesh, 4=tetrahedral mesh)
-* `useparallel` - is a flag in order to use omp versions (0=not use, 1=use)
 * `id1` - the .vtk point index of wave starting point [$u(id_1) = 0$]
 * `[id2 ...]` - optional list of other starting points
 

@@ -17,11 +17,27 @@ include_directories("include")
 
 file(GLOB SOURCES "src/*.cpp")
 
-
 if (NOT DEFINED ${OMP_NUM_THREADS})
     set(OMP_NUM_THREADS 1)
 endif ()
+
+if (${METHOD} STREQUAL "FMMP" OR ${METHOD} STREQUAL "fmmp")
+    add_compile_definitions(FMMP)
+elseif (${METHOD} STREQUAL "FMMP2" OR ${METHOD} STREQUAL "fmmp2")
+    add_compile_definitions(FMMP2)
+else ()
+    set(METHOD "fmm")
+    add_compile_definitions(FMM)
+endif()
+
 set(ENV{OMP_NUM_THREADS} ${OMP_NUM_THREADS})
 add_compile_definitions(N_THREADS=${OMP_NUM_THREADS})
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3  -march=native -funroll-loops -fopenmp -ltbb")
-add_executable(eikonal_solver main.cpp ${SOURCES})
+add_compile_definitions(${METHOD})
+
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3  -march=native -funroll-loops -fopenmp")
+
+if (NOT DEFINED ${EXE_NAME})
+    set(EXE_NAME "eikonal_solver_${METHOD}")
+endif ()
+
+add_executable(${EXE_NAME} main.cpp ${SOURCES})

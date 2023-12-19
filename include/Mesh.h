@@ -8,6 +8,7 @@
 #include <Eigen/Core>
 #include <vector>
 #include <memory>
+#include <Eikonal_traits.hpp>
 
 
 using namespace Eikonal;

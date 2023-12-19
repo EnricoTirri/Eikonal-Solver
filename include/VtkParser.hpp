@@ -3,6 +3,8 @@
 //
 #include <fstream>
 #include <utility>
+#include <array>
+#include <vector>
 
 #ifndef EIKONEL_TEST_MSHPARSER_H
 #define EIKONEL_TEST_MSHPARSER_H

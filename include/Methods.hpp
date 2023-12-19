@@ -76,9 +76,7 @@ namespace methods {
 		U.reserve(data.index.size());
 		std::priority_queue<int, std::vector<int>, EikonalHeapComparator>
 				minHeap((EikonalHeapComparator(U)));
-		for (int i = 0; i < data.points.size(); i++) {
-			U[i] = MAXF;
-		}
+		std::fill(std::execution::seq, U.begin(), U.end(), MAXF);
 		for (const auto &i: X) {
 			U[i] = 0;
 			minHeap.push(i);

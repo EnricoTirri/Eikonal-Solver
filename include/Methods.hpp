@@ -19,7 +19,7 @@
 //#define MSHDIM 3
 //#define MESH_SIZE 4
 #ifndef N_THREADS
-#define N_THREADS 8
+#define N_THREADS 4
 #endif
 
 
@@ -396,14 +396,13 @@ namespace methods {
 					std::size_t k = 0;
 					Eigen::Matrix<double, MESH_SIZE, 1> values;
 					for (std::size_t j = 0; j < MESH_SIZE; j++) {
-						if ((data.elements[m_element])[j] == point) {
-							base[MESH_SIZE - 1] = data.points[point];
-						} else {
+						if ((data.elements[m_element])[j] != point) {
 							base[k] = data.points[(data.elements[m_element])[j]];
 							values[k] = U[(data.elements[m_element])[j]];
 							k++;
 						}
 					}
+					base[MESH_SIZE - 1] = data.points[point];
 					typename Eikonal::Eikonal_traits<DIM>::MMatrix M;
 					if constexpr (DIM == 2)
 						M << 1.0, 0.0,
@@ -431,10 +430,10 @@ namespace methods {
 			if (error)
 				return false;
 
-			for (size_t index1 = 0; index1 < activepoints.size(); ++index1) {
-				if (!L_in[activepoints[index1].punto]) {
-					L_in[activepoints[index1].punto] = true;
-					minHeap.push(activepoints[index1].punto);
+			for (auto &activepoint: activepoints) {
+				if (!L_in[activepoint.punto]) {
+					L_in[activepoint.punto] = true;
+					minHeap.push(activepoint.punto);
 				}
 			}
 

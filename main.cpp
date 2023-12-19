@@ -110,7 +110,7 @@ int main(int argc, char *argv[])
             timespec start, end;
             clock_gettime(CLOCK_MONOTONIC, &start);
 
-            success = methods::FMMParallel<2, 3>(U, X, mesh);
+	        success = methods::FMMParallel2<2, 3>(U, X, mesh);
             clock_gettime(CLOCK_MONOTONIC, &end);
 
             if (success)
@@ -159,7 +159,7 @@ int main(int argc, char *argv[])
             timespec start, end;
             clock_gettime(CLOCK_MONOTONIC, &start);
 
-            success = methods::FMMParallel<3, 4>(U, X, mesh);
+	        success = methods::FMMParallel2<3, 4>(U, X, mesh);
             clock_gettime(CLOCK_MONOTONIC, &end);
 
             if (success)
@@ -208,7 +208,7 @@ int main(int argc, char *argv[])
             timespec start, end;
             clock_gettime(CLOCK_MONOTONIC, &start);
 
-            success = methods::FMMParallel<3, 3>(U, X, mesh);
+	        success = methods::FMMParallel2<3, 3>(U, X, mesh);
             clock_gettime(CLOCK_MONOTONIC, &end);
 
             if (success)

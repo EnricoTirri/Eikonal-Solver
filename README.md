@@ -56,8 +56,11 @@ where $c$ represents the celerity of the wave.
     * `Mesh.h` - defines the data structure containing the mesh
     * `VtkParser.hpp` - defines data structure and methods in order to parse a .vtk file
     * `MeshLoader.hpp` - defines methods in order to load a mesh from a file parser
-    * `EikonalSolver.hpp` - defines Eikonal global solver
-* `LocalProblem` - Eikonal local solver library, created by [prof. Formaggia Luca](https://github.com/lformaggia) and modified to accomodate all combination of space dimension and mesh (triangular or tetrahedral)
+    * `EikonalSolver.hpp` - defines Eikonal global problem solver
+    * `EikonalTraits.hpp` - defines some Data Structure for Eikonal problem traits
+    * `LocalSolver.hpp` - defines Eikonal local problem solver
+
+
 * `src` - source file of headers implementation
 
 
@@ -87,23 +90,21 @@ $ make
 ### How to run
 
 ```bash
-$ ./eikonal_solver_* input.vtk output.vtk pointdim meshdim id1 [id2 ...]
+$ ./eikonal_solver_* input.vtk output.vtk meshdim id1 [id2 ...]
 ```
 where:
 * `input.vtk` - is a path/filename to ASCII formatted .vtk input mesh file
 * `output.vtk` - is the path/filename where output (mesh + data) will be placed
-* `pointdim` - is the space dimension (2=2D space, 3=3D space)
 * `meshdim` - is the mesh size (3=triangular mesh, 4=tetrahedral mesh)
+  * **physical dimension is assumed to be always 3,\
+    be careful .vtk file to be appropriately formatted**
 * `id1` - the .vtk point index of wave starting point [$u(id_1) = 0$]
 * `[id2 ...]` - optional list of other starting points
 
 ### Examples showcase 
-##### Triangular Mesh on 2D space
-<img src="showcase/triangles2d.png" width="500"/>
-
-##### Triangular Mesh on 3D space
+##### Triangular Mesh
 <img src="showcase/triangles3d.png" width="500"/>
 
-##### Tetrahedral Mesh on 3D space
+##### Tetrahedral Mesh
 <img src="showcase/tetrahedron3d.png" width="500"/>
 

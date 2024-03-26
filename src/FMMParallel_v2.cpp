@@ -26,7 +26,7 @@ namespace Eikonal {
     class PointElements {
     public:
         size_t punto;
-        std::vector<int> elements;
+        std::vector<int> elements_legacy;
 
         PointElements(size_t p) : punto(p) {}
     };
@@ -92,22 +92,22 @@ namespace Eikonal {
 
             for (size_t index1 = 0; index1 < neighbors.size(); ++index1) {
                 for (size_t index2 = 0; index2 < MESH_SIZE; ++index2) {
-                    if (!L_in[data.elements[neighbors[index1]][index2]]) {
+                    if (!L_in[data.elements_legacy[neighbors[index1]][index2]]) {
                         if (activepoints.empty()) {
-                            PointElements activepoint(data.elements[neighbors[index1]][index2]);
-                            activepoint.elements.push_back(neighbors[index1]);
+                            PointElements activepoint(data.elements_legacy[neighbors[index1]][index2]);
+                            activepoint.elements_legacy.push_back(neighbors[index1]);
                             activepoints.push_back(activepoint);
                         }
                         int inserted = 0;
                         for (size_t index3 = 0; index3 < activepoints.size(); ++index3) {
-                            if (activepoints[index3].punto == data.elements[neighbors[index1]][index2]) {
-                                activepoints[index3].elements.push_back(neighbors[index1]);
+                            if (activepoints[index3].punto == data.elements_legacy[neighbors[index1]][index2]) {
+                                activepoints[index3].elements_legacy.push_back(neighbors[index1]);
                                 ++inserted;
                             }
                         }
-                        if (!inserted && !L_set[data.elements[neighbors[index1]][index2]]) {
-                            PointElements activepoint(data.elements[neighbors[index1]][index2]);
-                            activepoint.elements.push_back(neighbors[index1]);
+                        if (!inserted && !L_set[data.elements_legacy[neighbors[index1]][index2]]) {
+                            PointElements activepoint(data.elements_legacy[neighbors[index1]][index2]);
+                            activepoint.elements_legacy.push_back(neighbors[index1]);
                             activepoints.push_back(activepoint);
                         }
                     }
@@ -117,8 +117,8 @@ namespace Eikonal {
 #pragma omp parallel for schedule(static) num_threads(N_THREADS)
             for (size_t index1 = 0; index1 < activepoints.size(); ++index1) {
                 const auto point = activepoints[index1].punto;
-                for (size_t index2 = 0; index2 < activepoints[index1].elements.size(); ++index2) {
-                    const auto m_element = activepoints[index1].elements[index2];
+                for (size_t index2 = 0; index2 < activepoints[index1].elements_legacy.size(); ++index2) {
+                    const auto m_element = activepoints[index1].elements_legacy[index2];
 
                     // if point in L continue
                     // solve local problem with this point as unknown and the others as base
@@ -126,9 +126,9 @@ namespace Eikonal {
                     std::size_t k = 0;
                     Eigen::Matrix<double, MESH_SIZE, 1> values;
                     for (std::size_t j = 0; j < MESH_SIZE; j++) {
-                        if ((data.elements[m_element])[j] != point) {
-                            base[k] = data.points[(data.elements[m_element])[j]];
-                            values[k] = U[(data.elements[m_element])[j]];
+                        if ((data.elements_legacy[m_element])[j] != point) {
+                            base[k] = data.points[(data.elements_legacy[m_element])[j]];
+                            values[k] = U[(data.elements_legacy[m_element])[j]];
                             k++;
                         }
                     }

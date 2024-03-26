@@ -332,7 +332,7 @@ void VtkParser::loadMesh(const std::vector<std::array<double, 3>> &new_points,
 
     dataset_type = "UNSTRUCTURED_GRID";
     header = "# vtk DataFile Version 2.0";
-    description = "triangular elements loaded from computed data";
+    description = "triangular elements_legacy loaded from computed data";
     filetype = "ASCII";
     status = 1;
 }

@@ -28,7 +28,7 @@ namespace Eikonal {
     class PointElements {
     public:
         size_t punto;
-        std::vector<int> elements;
+        std::vector<int> elements_legacy;
 
         PointElements(size_t p) : punto(p) {}
     };
@@ -99,7 +99,7 @@ namespace Eikonal {
 #pragma omp parallel for collapse(2) num_threads(8)
             for (size_t index1 = 0; index1 < neighbors.size(); ++index1) {
                 for (size_t index2 = 0; index2 < MESH_SIZE; ++index2) {
-                    const auto point = data.elements[neighbors[index1]][index2];
+                    const auto point = data.elements_legacy[neighbors[index1]][index2];
                     const auto m_element = neighbors[index1];
                     ParallelStruct p(point, MAXF);
                     parallelarray[index1][index2] = p;
@@ -112,11 +112,11 @@ namespace Eikonal {
                     std::size_t k = 0;
                     Eigen::Matrix<double, MESH_SIZE, 1> values;
                     for (std::size_t j = 0; j < MESH_SIZE; j++) {
-                        if ((data.elements[m_element])[j] == point) {
+                        if ((data.elements_legacy[m_element])[j] == point) {
                             base[MESH_SIZE - 1] = data.points[point];
                         } else {
-                            base[k] = data.points[(data.elements[m_element])[j]];
-                            values[k] = U[(data.elements[m_element])[j]];
+                            base[k] = data.points[(data.elements_legacy[m_element])[j]];
+                            values[k] = U[(data.elements_legacy[m_element])[j]];
                             k++;
                         }
                     }

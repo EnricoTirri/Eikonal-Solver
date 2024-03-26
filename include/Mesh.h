@@ -20,10 +20,12 @@ namespace Eikonal {
     public:
         using MeshElement = std::array<int, MESHSIZE>;
 
-        std::vector<int> adjacentList;
+        std::vector<uint32_t> adjacentList;
         std::vector<range_t> index;
         std::vector<typename Traits::Point> points;
-        std::vector<MeshElement> elements;
+        std::vector<MeshElement> elements_legacy;
+        std::vector<uint32_t> eind;
+        std::vector<uint32_t> eptr;
     };
 }
 

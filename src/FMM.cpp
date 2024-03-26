@@ -70,10 +70,8 @@ namespace Eikonal {
             for (std::size_t j = start; j < end; j++) {
                 neighbors.push_back(data.adjacentList[j]);
             }
-
-            //maybe we can parallelize this
             for (const auto &m_element: neighbors) {
-                for (auto point: data.elements[m_element]) {
+                for (auto point: data.elements_legacy[m_element]) {
                     if (point == i || L_set[point]) continue;
                     //if point in L continue
                     //solve local problem with this point as unknown and the others as base
@@ -81,11 +79,11 @@ namespace Eikonal {
                     std::size_t k = 0;
                     Eigen::Matrix<double, MESH_SIZE, 1> values;
                     for (std::size_t j = 0; j < MESH_SIZE; j++) {
-                        if ((data.elements[m_element])[j] == point) {
+                        if ((data.elements_legacy[m_element])[j] == point) {
                             base[MESH_SIZE - 1] = data.points[point];
                         } else {
-                            base[k] = data.points[(data.elements[m_element])[j]];
-                            values[k] = U[(data.elements[m_element])[j]];
+                            base[k] = data.points[(data.elements_legacy[m_element])[j]];
+                            values[k] = U[(data.elements_legacy[m_element])[j]];
                             k++;
                         }
                     }

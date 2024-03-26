@@ -15,7 +15,12 @@
 #include <EikonalTraits.hpp>
 #include <VtkParser.hpp>
 #include <array>
-
+#ifdef MSHLOADER_VERBOSE
+#include <iostream>
+#include <ctime>
+using std::cout;
+using std::endl;
+#endif
 namespace Eikonal {
     template<size_t MESHSIZE>
     int
@@ -31,7 +36,7 @@ namespace Eikonal {
 #endif
 
         mesh.index.clear();
-        mesh.elements.clear();
+        mesh.elements_legacy.clear();
         mesh.adjacentList.clear();
 
         //support structure for parsing file
@@ -50,7 +55,7 @@ namespace Eikonal {
         }
 
         for (auto cell: parser.cells) {
-            M &m = mesh.elements.emplace_back();
+            M &m = mesh.elements_legacy.emplace_back();
 #pragma unroll MESHSIZE
             for (int j = 0; j < MESHSIZE; ++j)
                 m[j] = cell.point_ids[j];
@@ -58,13 +63,13 @@ namespace Eikonal {
 
 #ifdef MSHLOADER_VERBOSE
         cout << "end" << endl;
-        cout << "[LOAD]: starting loading mesh elements ... ";
+        cout << "[LOAD]: starting loading mesh elements_legacy ... ";
         cout.flush();
 #endif
 
-        for (int j = 0; j < mesh.elements.size(); ++j) {
+        for (int j = 0; j < mesh.elements_legacy.size(); ++j) {
             for (int i = 0; i < MESHSIZE; i++) {
-                read[mesh.elements[j][i]].push_back(j);
+                read[mesh.elements_legacy[j][i]].push_back(j);
             }
         }
 
@@ -131,12 +136,12 @@ namespace Eikonal {
 
 #ifdef MSHLOADER_VERBOSE
         cout << "end" << endl;
-        cout << "[DUMP]: starting dumping mesh elements ... ";
+        cout << "[DUMP]: starting dumping mesh elements_legacy ... ";
         cout.flush();
 #endif
 //
         std::vector<std::vector<int>> cells;
-        for (const auto &tri_points: mesh.elements) {
+        for (const auto &tri_points: mesh.elements_legacy) {
             std::vector<int> t_cell;
             for (auto &p: tri_points)
                 t_cell.emplace_back(p);

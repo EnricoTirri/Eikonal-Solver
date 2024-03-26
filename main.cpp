@@ -7,6 +7,7 @@
 #include <Mesh.h>
 #include <MeshLoader.hpp>
 #include <EikonalSolver.hpp>
+#include <metis.h>
 
 using namespace Eikonal;
 
@@ -95,7 +96,6 @@ int main(int argc, char *argv[]) {
         U.clear();
     } else // 3,3
     {
-
         Mesh<3u> mesh;
         std::vector<double> pointData;
         std::vector<double> elementData;
@@ -113,24 +113,18 @@ int main(int argc, char *argv[]) {
         std::vector<int> X;
 
         for (auto &point: startingPoints) {
-
             X.emplace_back(point);
         }
-
         timespec start, end;
         EikonalSolver<3> solver;
-
         solver.print_spec();
-
         clock_gettime(CLOCK_MONOTONIC, &start);
         success = solver.solve(U, X, mesh);
         clock_gettime(CLOCK_MONOTONIC, &end);
-
         if (success) {
             auto elapsed = static_cast<double>((end.tv_sec - start.tv_sec));
             elapsed += static_cast<double>((end.tv_nsec - start.tv_nsec)) / 1000000000.0;
             printf("end solver, time elapsed: %f\n", elapsed);
-
             loader.dump(mesh, parser, U, elementData);
             parser.save(output_filename);
         } else {
@@ -138,7 +132,6 @@ int main(int argc, char *argv[]) {
         }
         U.clear();
     }
-
     return 0;
 }
 

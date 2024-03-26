@@ -48,7 +48,7 @@ public:
     //status of parsing: 1=successful, 0=not successful
     int status = 0;
 
-    //elements format info
+    //elements_legacy format info
     std::string header;
     std::string description;
     std::string filetype;
@@ -58,7 +58,7 @@ public:
     //nodes info
     std::vector<VtkPoint> points;
 
-    //elements info
+    //elements_legacy info
     std::vector<VtkCell> cells;
 
     void loadMesh(const std::vector<std::array<double,3>>& points,

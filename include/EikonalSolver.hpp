@@ -12,7 +12,7 @@ namespace Eikonal {
     template<int MESH_SIZE>
     class EikonalSolver {
     public:
-        double const MAXF = 900000;
+       constexpr static double const MAXF = 900000;
 
         bool solve(std::vector<double> &U,
                    const std::vector<int> &X,

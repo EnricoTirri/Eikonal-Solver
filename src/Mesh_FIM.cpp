@@ -19,6 +19,7 @@ namespace Eikonal {
 
     template<int MESH_SIZE>
     double Update(int v, const Mesh<MESH_SIZE> &data, const std::vector<double> &U) {
+
         double min = std::min(U[v], EikonalSolver<MESH_SIZE>::MAXF);
         //find neighbors of L[i]
         std::vector<int> neighbors;
@@ -55,7 +56,6 @@ namespace Eikonal {
         return min;
     }
 
-
     template<int MESH_SIZE>
     void EikonalSolver<MESH_SIZE>::print_spec() {
         std::cout << "Fast Iterative Method Eikonal solver" << std::endl;
@@ -78,22 +78,26 @@ namespace Eikonal {
         U.reserve(data.index.size());
 
         std::vector<int> L;
+        std::vector<bool> L_in;
+        L_in.resize(data.index.size());
+        std::fill(L_in.begin(), L_in.end(), false);
         //X is the seed vertices
         //L is the active vertices
         //for every 1-ring of data in X, add the vertices to L
-        for (int i = 0; i < X.size(); i++) {
-            U[X[i]] = 0;
+        for (int i : X) {
+            U[i] = 0;
             //find neighbors of X[i]
             std::vector<int> neighbors;
             std::size_t start, end;
-            start = data.index.at(X[i]).start;
-            end = data.index.at(X[i]).end;
+            start = data.index.at(i).start;
+            end = data.index.at(i).end;
             for (std::size_t j = start; j < end; j++) {
                 neighbors.push_back(data.adjacentList[j]);
             }
             for (auto &m_element: neighbors) {
                 for (const auto &point: data.elements_legacy[m_element]) {
                     L.push_back(point);
+                    L_in[point]=true;
                 }
             }
         }
@@ -102,8 +106,10 @@ namespace Eikonal {
         std::vector<int> L_new;
         while (!L.empty()) {
             L_new.clear();
+#pragma omp parallel for default(none) shared(L,L_in,L_new,U,data) num_threads(N_THREADS)
             for (auto v: L) {
-                if (std::abs(U[v] - Update<MESH_SIZE>(v, data, U)) < tol) {
+                if (std::abs(U[v] - Update<MESH_DIM>(v, data, U)) < tol) {
+                    L_in[v]=false;
                     //find neighbors of L[i]
                     std::vector<int> neighbors;
                     std::size_t start, end;
@@ -115,20 +121,28 @@ namespace Eikonal {
 
                     for (auto &m_element: neighbors) {
                         for (const auto &point: data.elements_legacy[m_element]) {
-                            if (point == v || std::find(L.begin(), L.end(), point) != L.end()) continue;
+                            if (point == v || L_in[point]) continue;
+                            double q = Update<MESH_DIM>(point, data, U);
+                            {
                                 double p = U[point];
-                                double q = Update<MESH_SIZE>(point, data, U);
-                                if(p > q){
+                                if (p > q) {
                                     U[point] = q;
+#pragma omp critical
                                     L_new.push_back(point);
+                                    L_in[point] = true;
                                 }
+                            }
                         }
                     }
                 } else {
-                    U[v] = Update<MESH_SIZE>(v, data, U);
+                    U[v] = Update<MESH_DIM>(v, data, U);
+#pragma omp critical
                     L_new.push_back(v);
                 }
             }
+
+
+
 
         std::swap(L, L_new);
         }

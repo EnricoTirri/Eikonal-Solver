@@ -20,16 +20,16 @@ namespace Eikonal {
         }
     };
 
-     int not_same_sign(const double a, double b){
-
+     int not_same_sign(const double a,const double b){
         int sign_bit;
+        double temp;
         asm (
-                "xorpd %[a], %[b]\n\t"     // XOR the signs of a and b
-                "vmovmskpd %[b], %[sign]\n\t"  // Move the sign bits to the lower 2 bits of b
-                "and $1, %[sign]\n\t"      // Isolate the least significant bit
-                : [b] "+x" (b), [sign] "=r" (sign_bit) //b is not really modified
-        : [a] "x" (a)
-        :
+            "vpxor  %[a], %[b],%[temp]\n\t"     // XOR the signs of a and b
+            "vmovmskpd %[temp], %[sign]\n\t"  // Move the sign bits to the lower 2 bits of b
+            "and $1, %[sign]\n\t"      // Isolate the least significant bit
+            :  [sign] "=r" (sign_bit),[temp] "=x" (temp) 
+            : [a] "x" (a) , [b] "x" (b)
+            :
         );
         return sign_bit;
     }

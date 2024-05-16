@@ -16,10 +16,11 @@ namespace Eikonal {
     public:
         using MeshElement = std::array<int, MESHSIZE>;
 
-        std::vector<int32_t> adjacentList;
-        std::vector<int32_t> index;
+        std::vector<int32_t> pointAdjacentElementList;
+        std::vector<int32_t> adjPointPtr;
         std::vector<typename Traits::Point> points;
-        std::vector<MeshElement> elements_legacy;
+        std::vector<int32_t> adjElementPtr;
+        std::vector<int32_t> elementAdjacentPointList;
     };
 }
 

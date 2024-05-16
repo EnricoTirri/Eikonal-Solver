@@ -11,21 +11,15 @@
 #include <EikonalTraits.hpp>
 
 namespace Eikonal {
-    typedef struct {
-        size_t start, end;
-    } range_t;
-
     template<std::size_t MESHSIZE>
     class Mesh {
     public:
         using MeshElement = std::array<int, MESHSIZE>;
 
-        std::vector<uint32_t> adjacentList;
-        std::vector<range_t> index;
+        std::vector<int32_t> adjacentList;
+        std::vector<int32_t> index;
         std::vector<typename Traits::Point> points;
         std::vector<MeshElement> elements_legacy;
-        std::vector<uint32_t> eind;
-        std::vector<uint32_t> eptr;
     };
 }
 

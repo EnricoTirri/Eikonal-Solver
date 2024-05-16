@@ -11,11 +11,9 @@ if(${VERBOSE})
     add_compile_definitions(MSHLOADER_VERBOSE true)
 endif ()
 
-include_directories("LocalProblem/include")
-include_directories("/usr/include/eigen3")
-include_directories("/usr/include/")
 include_directories(${EIGEN_PATH})
 include_directories("include")
+
 
 file(GLOB SOURCES "src/*.cpp")
 
@@ -27,12 +25,22 @@ if (NOT DEFINED METHOD)
     set(METHOD FMM)
 endif()
 
+#/usr/lib/libmetis.so is the path to the metis library need to find a way to make it more general
+#set(METIS_LIB "/usr/lib/libmetis.so")
+
+if (NOT DEFINED METIS_LIB)
+    set(METIS_LIB "/usr/lib/libmetis.so")
+endif ()
+
+
 if (${METHOD} STREQUAL "FMMP" OR ${METHOD} STREQUAL "fmmp")
     add_compile_definitions(FMMP)
 elseif (${METHOD} STREQUAL "FMMP2" OR ${METHOD} STREQUAL "fmmp2")
     add_compile_definitions(FMMP2)
 elseif (${METHOD} STREQUAL "FIM" OR ${METHOD} STREQUAL "fim")
     add_compile_definitions(FIM)
+elseif (${METHOD} STREQUAL "PFMM" OR ${METHOD} STREQUAL "pfmm")
+    add_compile_definitions(PFMM)
 else ()
     add_compile_definitions(FMM)
 endif()
@@ -47,14 +55,6 @@ if (NOT DEFINED ${EXE_NAME})
     set(EXE_NAME "eikonal_solver_${METHOD}")
 endif ()
 
+add_executable(${EXE_NAME} main.cpp ${SOURCES})
 
-#/usr/lib/libmetis.so is the path to the metis library need to find a way to make it more general
-#set(METIS_LIB "/usr/lib/libmetis.so")
-
-if (NOT DEFINED METIS_LIB)
-    set(METIS_LIB "/usr/lib/libmetis.so")
-endif ()
-add_executable(${EXE_NAME} main.cpp ${SOURCES}
-        src/Mesh_FIM.cpp
-)
 target_link_libraries(${EXE_NAME} ${METIS_LIB})

@@ -81,8 +81,8 @@ namespace Eikonal {
 
             std::vector<int> neighbors;
             std::size_t start, end;
-            start = data.index.at(i).start;
-            end = data.index.at(i).end;
+            start = data.index.at(i);
+            end = data.index.at(i+1);
             for (std::size_t j = start; j < end; j++) {
                 neighbors.push_back(data.adjacentList[j]);
             }

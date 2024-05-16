@@ -24,8 +24,8 @@ namespace Eikonal {
         //find neighbors of L[i]
         std::vector<int> neighbors;
         std::size_t start, end;
-        start = data.index.at(v).start;
-        end = data.index.at(v).end;
+        start = data.index.at(v);
+        end = data.index.at(v+1);
         for (std::size_t j = start; j < end; j++) {
             neighbors.push_back(data.adjacentList[j]);
         }
@@ -89,8 +89,8 @@ namespace Eikonal {
             //find neighbors of X[i]
             std::vector<int> neighbors;
             std::size_t start, end;
-            start = data.index.at(i).start;
-            end = data.index.at(i).end;
+            start = data.index.at(i);
+            end = data.index.at(i+1);
             for (std::size_t j = start; j < end; j++) {
                 neighbors.push_back(data.adjacentList[j]);
             }
@@ -108,13 +108,13 @@ namespace Eikonal {
             L_new.clear();
 #pragma omp parallel for default(none) shared(L,L_in,L_new,U,data) num_threads(N_THREADS)
             for (auto v: L) {
-                if (std::abs(U[v] - Update<MESH_DIM>(v, data, U)) < tol) {
+                if (std::abs(U[v] - Update<MESH_SIZE>(v, data, U)) < tol) {
                     L_in[v]=false;
                     //find neighbors of L[i]
                     std::vector<int> neighbors;
                     std::size_t start, end;
-                    start = data.index.at(v).start;
-                    end = data.index.at(v).end;
+                    start = data.index.at(v);
+                    end = data.index.at(v+1);
                     for (std::size_t j = start; j < end; j++) {
                         neighbors.push_back(data.adjacentList[j]);
                     }
@@ -122,7 +122,7 @@ namespace Eikonal {
                     for (auto &m_element: neighbors) {
                         for (const auto &point: data.elements_legacy[m_element]) {
                             if (point == v || L_in[point]) continue;
-                            double q = Update<MESH_DIM>(point, data, U);
+                            double q = Update<MESH_SIZE>(point, data, U);
                             {
                                 double p = U[point];
                                 if (p > q) {
@@ -135,7 +135,7 @@ namespace Eikonal {
                         }
                     }
                 } else {
-                    U[v] = Update<MESH_DIM>(v, data, U);
+                    U[v] = Update<MESH_SIZE>(v, data, U);
 #pragma omp critical
                     L_new.push_back(v);
                 }

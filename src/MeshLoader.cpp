@@ -80,22 +80,18 @@ namespace Eikonal {
 #endif
 
         size_t k = 0;
-        size_t prev = 0;
-        mesh.index.resize(parser.points.size());
+        mesh.index.resize(read.size()+1);
 
         for (int i = 0; i < read.size(); ++i) {
-            if (k == 0)
-                mesh.index[i].start = 0;
-            else
-                mesh.index[i].start = prev;
+            mesh.index[i] = k;
 
             for (auto j: read[i]) {
                 mesh.adjacentList.push_back(j);
                 k++;
             }
-            mesh.index[i].end = k;
-            prev = k;
         }
+
+        mesh.index[read.size()] = k;
 
         read.clear();
 

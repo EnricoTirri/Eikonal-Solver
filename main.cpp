@@ -7,7 +7,6 @@
 #include <Mesh.h>
 #include <MeshLoader.hpp>
 #include <EikonalSolver.hpp>
-#include <metis.h>
 
 using namespace Eikonal;
 
@@ -48,7 +47,6 @@ int main(int argc, char *argv[]) {
     parser.open(filename);
 
     bool success;
-
 
     if (meshdim == 4) // 3,4
     {

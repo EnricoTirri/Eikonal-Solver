@@ -8,7 +8,6 @@
 #include <queue>
 #include <iostream>
 #include "EikonalTraits.hpp"
-#include <execution>
 #include "EikonalHeapComparator.cpp"
 #include "LocalSolver.hpp"
 
@@ -23,35 +22,39 @@ namespace Eikonal {
                                               const Mesh<MESH_SIZE> &data) {
 
         using Point = typename Eikonal::Traits::Point;
-        for (auto &point: X) {
-            if (point >= data.index.size()) {
-                printf("error on initial point: %f %f does not belong to mesh\n", data.points[point].x(),
-                       data.points[point].y());
+
+        // Check if pointId belongs to mesh
+        for (auto &pointId: X) {
+            if (pointId >= data.points.size()) {
+                printf("error on initial point id: %d does not belong to mesh\n", pointId);
                 return false;
             }
         }
 
-        U.reserve(data.index.size());
-        std::priority_queue<int, std::vector<int>, EikonalHeapComparator>
-                minHeap((EikonalHeapComparator(U)));
-        std::fill(std::execution::seq, U.begin(), U.end(), MAXF);
+        // Initialize minHeap
+        U.resize(data.points.size());
+        std::priority_queue<int, std::vector<int>, EikonalHeapComparator> minHeap((EikonalHeapComparator(U)));
+        std::fill(U.begin(), U.end(), MAXF);
         for (const auto &i: X) {
             U[i] = 0;
             minHeap.push(i);
         }
 
-        int step_count = data.index.size() / 50;
+        // Initialize progress info
+        int step_count = data.points.size() / 50;
         int count = 0;
         int step = 0;
 
         std::vector<bool> L_set(data.points.size(), false);
         std::vector<bool> L_in(data.points.size(), false);
         while (!minHeap.empty()) {
-            int i = minHeap.top();
+            // Take the index of the not already explored point with lower time
+            int minPointID = minHeap.top();
             minHeap.pop();
-            L_set[i] = true;
+            L_set[minPointID] = true;
+
+            // Update progress
             ++count;
-            //   std::cout << count << " " << i << std::endl;
             if (step_count == count - 1) {
                 count = 0;
                 step += 2;
@@ -60,30 +63,38 @@ namespace Eikonal {
                 std::cout.flush();
             }
 
-            //take time value of point p
-            double p = U[i];
-            //find neighbors of L[i] and get the base (the DIMENSION points with the smallest value of U
+
+            // Add all elements the point belongs to, to the elements that must be updated
             std::vector<int> neighbors;
-            std::size_t start, end;
-            start = data.index.at(i);
-            end = data.index.at(i+1);
-            for (std::size_t j = start; j < end; j++) {
-                neighbors.push_back(data.adjacentList[j]);
+            int elRangeStart = data.adjPointPtr[minPointID];
+            int elRangeEnd = data.adjPointPtr[minPointID+1];
+
+            for (std::size_t j = elRangeStart; j < elRangeEnd; j++) {
+                neighbors.push_back(data.pointAdjacentElementList[j]);
             }
-            for (const auto &m_element: neighbors) {
-                for (auto point: data.elements_legacy[m_element]) {
-                    if (point == i || L_set[point]) continue;
-                    //if point in L continue
-                    //solve local problem with this point as unknown and the others as base
+
+            for (const auto &eleId: neighbors) {
+                // Take range of pntId of the element
+                int pointRangeStart = data.adjElementPtr[eleId];
+                int pointRangeEnd = data.adjElementPtr[eleId + 1];
+
+                for (int pi = pointRangeStart; pi < pointRangeEnd; ++pi) {
+                    int pointID = data.elementAdjacentPointList[pi];
+
+                    // If point of the element has been already explored then continue
+                    if (L_set[pointID]) continue;
+
+                    // Otherwise solve local problem with this point as unknown and the others as base
                     std::array<Point, MESH_SIZE> base;
                     std::size_t k = 0;
                     Eigen::Matrix<double, MESH_SIZE, 1> values;
                     for (std::size_t j = 0; j < MESH_SIZE; j++) {
-                        if ((data.elements_legacy[m_element])[j] == point) {
-                            base[MESH_SIZE - 1] = data.points[point];
+                        int tpId = data.elementAdjacentPointList[pointRangeStart+j];
+                        if (tpId == pointID) {
+                            base[MESH_SIZE - 1] = data.points[pointID];
                         } else {
-                            base[k] = data.points[(data.elements_legacy[m_element])[j]];
-                            values[k] = U[(data.elements_legacy[m_element])[j]];
+                            base[k] = data.points[tpId];
+                            values[k] = U[tpId];
                             k++;
                         }
                     }
@@ -97,23 +108,19 @@ namespace Eikonal {
 
                     double sol = solver();
 
-                    if (sol > U[point]) continue;
-                    U[point] = sol;
+                    // If solution does not improve then skip
+                    if (sol > U[pointID]) continue;
 
-                    Point p;
+                    // Otherwise update solution
+                    U[pointID] = sol;
 
-                    for (int i = 0; i < 3; i++) {
-                        p[i] = data.points[point][i];
+                    //
+                    if (!L_in[pointID]) {
+                        L_in[pointID] = true;
+                        minHeap.push(pointID);
                     }
-                    if (!L_in[point]) {
-                        L_in[point] = true;
-                        minHeap.push(point);
-                    }
-
                 }
             }
-
-
         }
         std::cout << std::endl;
         return true;

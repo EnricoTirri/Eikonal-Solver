@@ -8,7 +8,6 @@
 #include <queue>
 #include <iostream>
 #include "EikonalTraits.hpp"
-#include <execution>
 #include "EikonalHeapComparator.cpp"
 #include "LocalSolver.hpp"
 
@@ -143,7 +142,7 @@ namespace Eikonal {
                     LocalSolver <MESH_SIZE> solver(M, base, values, 5000, 10e-6);
 
                     auto sol = solver();
-                    
+
                     if (sol > U[pointID]) continue;
                     U[pointID] = sol;
 

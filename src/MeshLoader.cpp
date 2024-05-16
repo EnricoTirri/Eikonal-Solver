@@ -35,13 +35,11 @@ namespace Eikonal {
         printf("\n(MSHLOADER)[LOAD]: Start loading from parser\n");
 #endif
 
-        mesh.index.clear();
-        mesh.elements_legacy.clear();
-        mesh.adjacentList.clear();
+        mesh.adjPointPtr.clear();
+        mesh.pointAdjacentElementList.clear();
+        mesh.adjElementPtr.clear();
+        mesh.elementAdjacentPointList.clear();
 
-        //support structure for parsing file
-        std::vector<std::vector<int>> read;
-        read.resize(parser.points.size());
 #ifdef MSHLOADER_VERBOSE
         cout << "[LOAD]: starting loading points ... ";
         cout.flush();
@@ -54,12 +52,18 @@ namespace Eikonal {
                 p[i] = point.vec[i];
         }
 
+        mesh.adjElementPtr.reserve(parser.cells.size()+1);
+        mesh.elementAdjacentPointList.resize(parser.cells.size() * MESHSIZE);
+        int elPtr=0;
         for (auto cell: parser.cells) {
-            M &m = mesh.elements_legacy.emplace_back();
+            mesh.adjElementPtr.push_back(elPtr);
 #pragma unroll MESHSIZE
-            for (int j = 0; j < MESHSIZE; ++j)
-                m[j] = cell.point_ids[j];
+            for (int j = 0; j < MESHSIZE; ++j){
+                mesh.elementAdjacentPointList[elPtr] = cell.point_ids[j];
+                elPtr++;
+            }
         }
+        mesh.adjElementPtr.push_back(elPtr);
 
 #ifdef MSHLOADER_VERBOSE
         cout << "end" << endl;
@@ -67,9 +71,16 @@ namespace Eikonal {
         cout.flush();
 #endif
 
-        for (int j = 0; j < mesh.elements_legacy.size(); ++j) {
+
+        //support structure for parsing file
+        std::vector<std::vector<int>> read;
+        read.resize(parser.points.size());
+
+        for (int elID = 0; elID < mesh.adjElementPtr.size()-1; ++elID) {
+            int sP = mesh.adjElementPtr[elID];
             for (int i = 0; i < MESHSIZE; i++) {
-                read[mesh.elements_legacy[j][i]].push_back(j);
+                int ptId = mesh.elementAdjacentPointList[sP+i];
+                read[ptId].push_back(elID);
             }
         }
 
@@ -80,18 +91,18 @@ namespace Eikonal {
 #endif
 
         size_t k = 0;
-        mesh.index.resize(read.size()+1);
+        mesh.adjPointPtr.resize(read.size() + 1);
 
         for (int i = 0; i < read.size(); ++i) {
-            mesh.index[i] = k;
+            mesh.adjPointPtr[i] = k;
 
             for (auto j: read[i]) {
-                mesh.adjacentList.push_back(j);
+                mesh.pointAdjacentElementList.push_back(j);
                 k++;
             }
         }
 
-        mesh.index[read.size()] = k;
+        mesh.adjPointPtr[read.size()] = k;
 
         read.clear();
 
@@ -137,10 +148,12 @@ namespace Eikonal {
 #endif
 //
         std::vector<std::vector<int>> cells;
-        for (const auto &tri_points: mesh.elements_legacy) {
+        for (int i=0; i<mesh.adjElementPtr.size()-1; ++i) {
             std::vector<int> t_cell;
-            for (auto &p: tri_points)
-                t_cell.emplace_back(p);
+            int start = mesh.adjElementPtr[i];
+            int end = mesh.adjElementPtr[i+1];
+            for (int j=start; j<end; ++j)
+                t_cell.emplace_back(mesh.elementAdjacentPointList[j]);
             cells.emplace_back(t_cell);
         }
 
@@ -156,7 +169,7 @@ namespace Eikonal {
             temp.emplace_back(vals);
             points_value.emplace_back(temp);
         }
-//        for (const auto &pair: mesh.index) {
+//        for (const auto &pair: mesh.adjPointPtr) {
 //            if (pointsData.contains(pair.first)) {
 //                std::vector<double> c_temp;
 //                c_temp.emplace_back(pointsData.at(pair.first));

@@ -1,13 +1,11 @@
-//
-// Created by Enrico on 25/11/2023.
-//
+
 #include <Mesh.h>
 #include <EikonalTraits.hpp>
 #include <VtkParser.hpp>
 #include <vector>
 
 namespace Eikonal {
-    template< size_t MESHSIZE>
+    template<size_t MESHSIZE>
     class MeshLoader {
 
         typedef Mesh<MESHSIZE>::MeshElement M;
@@ -27,5 +25,4 @@ namespace Eikonal {
 
     template
     class MeshLoader<4>;
-
 }

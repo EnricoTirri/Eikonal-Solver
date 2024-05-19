@@ -1,10 +1,7 @@
 
-#ifndef EIKONAL_SOLVER_EIKONALMATH_H
-#define EIKONAL_SOLVER_EIKONALMATH_H
-
 #include <cmath>
 
-namespace Eikonal{
+namespace Eikonal {
 
     class SideFunction {
     private:
@@ -62,5 +59,3 @@ namespace Eikonal{
     }
 
 }
-
-#endif //EIKONAL_SOLVER_EIKONALMATH_H

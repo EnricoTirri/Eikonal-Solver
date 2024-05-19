@@ -1,13 +1,3 @@
-//
-// Created by Enrico on 19/12/2023.
-//
-
-//
-// Created by Enrico on 25/11/2023.
-//
-
-#ifndef EIKONEL_TEST_MESHLOADER_H
-#define EIKONEL_TEST_MESHLOADER_H
 
 #include <MeshLoader.hpp>
 #include <Mesh.h>
@@ -15,6 +5,7 @@
 #include <EikonalTraits.hpp>
 #include <VtkParser.hpp>
 #include <array>
+
 #ifdef MSHLOADER_VERBOSE
 #include <iostream>
 #include <ctime>
@@ -195,4 +186,3 @@ namespace Eikonal {
         return 1;
     }
 }
-#endif //EIKONEL_TEST_MESHLOADER_H

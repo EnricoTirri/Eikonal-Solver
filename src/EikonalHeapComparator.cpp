@@ -1,6 +1,4 @@
-//
-// Created by Enrico on 19/12/2023.
-//
+
 #include <vector>
 
 class EikonalHeapComparator {

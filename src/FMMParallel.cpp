@@ -1,6 +1,3 @@
-//
-// Created by Enrico on 19/12/2023.
-//
 
 #if FMMP
 
@@ -155,7 +152,6 @@ namespace Eikonal {
                     minHeap.push(activepoint.punto);
                 }
             }
-
 
         }
 

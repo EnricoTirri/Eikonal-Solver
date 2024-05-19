@@ -1,7 +1,4 @@
 
-#ifndef EIKONAL_SOLVER_LOCALSOLVER_H
-#define EIKONAL_SOLVER_LOCALSOLVER_H
-
 #include <Eigen/Core>
 #include "EikonalTraits.hpp"
 
@@ -65,4 +62,3 @@ namespace Eikonal {
     class LocalSolver<4>;
 
 }
-#endif //EIKONAL_SOLVER_LOCALSOLVER_H

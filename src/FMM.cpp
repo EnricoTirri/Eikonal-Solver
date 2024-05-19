@@ -1,6 +1,3 @@
-//
-// Created by Enrico on 19/12/2023.
-//
 
 #if FMM
 
@@ -40,28 +37,24 @@ namespace Eikonal {
             minHeap.push(i);
         }
 
-        // Initialize progress info
-        int step_count = data.points.size() / 50;
-        int count = 0;
-        int step = 0;
+#ifdef SOLVER_VERBOSE
+        int iteration = 0;
+#endif
 
         std::vector<bool> L_set(data.points.size(), false);
         std::vector<bool> L_in(data.points.size(), false);
         while (!minHeap.empty()) {
+
+#ifdef SOLVER_VERBOSE
+            iteration++;
+            std::cout << "Iteration: " << iteration << "\tActiveList size: " << minHeap.size() << std::endl;
+#endif
+
+
             // Take the index of the not already explored point with lower time
             int minPointID = minHeap.top();
             minHeap.pop();
             L_set[minPointID] = true;
-
-            // Update progress
-            ++count;
-            if (step_count == count - 1) {
-                count = 0;
-                step += 2;
-                std::cout << '\r';
-                std::cout << step << "% ";
-                std::cout.flush();
-            }
 
 
             // Add all elements the point belongs to, to the elements that must be updated
@@ -122,7 +115,6 @@ namespace Eikonal {
                 }
             }
         }
-        std::cout << std::endl;
         return true;
     }
 }

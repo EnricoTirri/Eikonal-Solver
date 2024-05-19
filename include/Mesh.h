@@ -1,9 +1,3 @@
-//
-// Created by giorgio on 20/11/23.
-//
-
-#ifndef EIKONEL_TEST_MESH_H
-#define EIKONEL_TEST_MESH_H
 
 #include <Eigen/Core>
 #include <vector>
@@ -23,5 +17,3 @@ namespace Eikonal {
         std::vector<int32_t> elementAdjacentPointList;
     };
 }
-
-#endif

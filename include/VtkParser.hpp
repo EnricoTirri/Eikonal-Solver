@@ -1,21 +1,17 @@
-//
-// Created by Enrico on 23/11/2023.
-//
+
 #include <fstream>
 #include <utility>
 #include <array>
 #include <vector>
 
-#ifndef EIKONEL_TEST_MSHPARSER_H
-#define EIKONEL_TEST_MSHPARSER_H
-
-class VtkPoint{
+class VtkPoint {
 public:
-    std::array<double,3> vec;
+    std::array<double, 3> vec;
     std::vector<double> data;
 
-    VtkPoint(double x, double y, double z):vec{x,y,z}{}
-    VtkPoint(double x, double y, double z, std::vector<double> data) : VtkPoint(x,y,z){
+    VtkPoint(double x, double y, double z) : vec{x, y, z} {}
+
+    VtkPoint(double x, double y, double z, std::vector<double> data) : VtkPoint(x, y, z) {
         this->data = std::move(data);
     };
 
@@ -28,18 +24,19 @@ public:
 };
 
 
-class VtkCell{
+class VtkCell {
 public:
     int type;
     std::vector<double> data;
     std::vector<int> point_ids;
-    VtkCell() : type(-1){};
+
+    VtkCell() : type(-1) {};
+
     VtkCell(int type, std::vector<int> point_ids) : type(type) { this->point_ids = std::move(point_ids); }
-    VtkCell(int type, std::vector<int> point_ids, std::vector<double> data) : VtkCell(type,std::move(point_ids)){
+
+    VtkCell(int type, std::vector<int> point_ids, std::vector<double> data) : VtkCell(type, std::move(point_ids)) {
         this->data = std::move(data);
     }
-
-
 };
 
 
@@ -61,10 +58,10 @@ public:
     //elements_legacy info
     std::vector<VtkCell> cells;
 
-    void loadMesh(const std::vector<std::array<double,3>>& points,
-              const std::vector<std::vector<int>>& cells,
-              const std::vector<std::vector<double>>& point_data,
-              const std::vector<std::vector<double>>& cell_data);
+    void loadMesh(const std::vector<std::array<double, 3>> &points,
+                  const std::vector<std::vector<int>> &cells,
+                  const std::vector<std::vector<double>> &point_data,
+                  const std::vector<std::vector<double>> &cell_data);
 
     void open(std::string const &filename);
 
@@ -72,8 +69,7 @@ public:
 
 
 private:
-    void ascii_parser(std::ifstream  &input);
-    void ascii_saver(std::ofstream  &output);
-};
+    void ascii_parser(std::ifstream &input);
 
-#endif
+    void ascii_saver(std::ofstream &output);
+};

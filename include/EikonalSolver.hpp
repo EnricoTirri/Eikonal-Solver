@@ -1,12 +1,7 @@
-//
-// Created by Enrico on 19/12/2023.
-//
+
 #include <iostream>
 #include <vector>
 #include <Mesh.h>
-
-#ifndef EIKONAL_SOLVER_EIKONALSOLVER_H
-#define EIKONAL_SOLVER_EIKONALSOLVER_H
 
 namespace Eikonal {
     template<int MESH_SIZE>
@@ -27,4 +22,3 @@ namespace Eikonal {
     template
     class EikonalSolver<4>;
 }
-#endif //EIKONAL_SOLVER_EIKONALSOLVER_H

@@ -1,6 +1,4 @@
-//
-// Created by Enrico on 23/11/2023.
-//
+
 #include <fstream>
 #include <vector>
 #include <array>

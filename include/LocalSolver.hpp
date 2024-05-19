@@ -1,6 +1,3 @@
-//
-// Created by Enrico on 22/03/2024.
-//
 
 #ifndef EIKONAL_SOLVER_LOCALSOLVER_H
 #define EIKONAL_SOLVER_LOCALSOLVER_H
@@ -9,6 +6,7 @@
 #include "EikonalTraits.hpp"
 
 namespace Eikonal {
+
     template<int MESH_SIZE>
     class LocalSolver {
     private:

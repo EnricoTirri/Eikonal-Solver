@@ -43,93 +43,86 @@ int main(int argc, char *argv[]) {
         return 1;
     }
 
-    VtkParser parser;
+    VtkParser parser = VtkParser();
     parser.open(filename);
 
     bool success;
 
+
+    std::vector<double> pointData;
+    std::vector<double> elementData;
+    std::vector<double> U;
+    std::vector<int> X;
+    timespec start{}, end{};
+
     if (meshdim == 4) // 3,4
     {
         Mesh<4u> mesh;
-        std::vector<double> pointData;
-        std::vector<double> elementData;
 
         MeshLoader<4> loader;
+        std::cout << "LOADING MESH...\t";
         if (loader.load(mesh, parser, pointData, elementData) != 1) {
-            printf("unable to load the mesh");
+            std::cout << "unable to load the mesh" << std::endl;
             return 1;
+        }else{
+            std::cout << "loaded" << std::endl;
         }
-
-        parser = VtkParser();
-
-
-        std::vector<double> U(mesh.points.size());
-
-        std::vector<int> X;
 
         for (auto point: startingPoints) {
             X.emplace_back(point);
         }
 
-        timespec start, end;
         EikonalSolver<4> solver;
 
+        std::cout << "LAUNCHING SOLVER ..." << std::endl;
         solver.print_spec();
 
         clock_gettime(CLOCK_MONOTONIC, &start);
         success = solver.solve(U, X, mesh);
         clock_gettime(CLOCK_MONOTONIC, &end);
 
-        if (success) {
-            auto elapsed = static_cast<double>((end.tv_sec - start.tv_sec));
-            elapsed += static_cast<double>((end.tv_nsec - start.tv_nsec)) / 1000000000.0;
-            printf("end solver, time elapsed: %f\n", elapsed);
-
-            parser = VtkParser();
-            loader.dump(mesh, parser, U, elementData);
-            parser.save(output_filename);
-        } else {
-            printf("solver failed\n");
-        }
+        loader.dump(mesh, parser, U, elementData);
         U.clear();
+
     } else // 3,3
     {
         Mesh<3u> mesh;
-        std::vector<double> pointData;
-        std::vector<double> elementData;
 
         MeshLoader<3> loader;
+        std::cout << "LOADING MESH...\t";
         if (loader.load(mesh, parser, pointData, elementData) != 1) {
-            printf("unable to load the mesh");
+            std::cout << "unable to load the mesh" << std::endl;
             return 1;
+        }else{
+            std::cout << "loaded" << std::endl;
         }
-
-        parser = VtkParser();
-
-
-        std::vector<double> U(mesh.points.size());
-        std::vector<int> X;
 
         for (auto &point: startingPoints) {
             X.emplace_back(point);
         }
-        timespec start, end;
+
         EikonalSolver<3> solver;
+        std::cout << "LAUNCHING SOLVER ..." << std::endl;
         solver.print_spec();
+
         clock_gettime(CLOCK_MONOTONIC, &start);
         success = solver.solve(U, X, mesh);
         clock_gettime(CLOCK_MONOTONIC, &end);
-        if (success) {
-            auto elapsed = static_cast<double>((end.tv_sec - start.tv_sec));
-            elapsed += static_cast<double>((end.tv_nsec - start.tv_nsec)) / 1000000000.0;
-            printf("end solver, time elapsed: %f\n", elapsed);
-            loader.dump(mesh, parser, U, elementData);
-            parser.save(output_filename);
-        } else {
-            printf("solver failed\n");
-        }
+
+        loader.dump(mesh, parser, U, elementData);
         U.clear();
     }
+
+    if (success) {
+        auto elapsed = static_cast<double>((end.tv_sec - start.tv_sec));
+        elapsed += static_cast<double>((end.tv_nsec - start.tv_nsec)) / 1000000000.0;
+        std::cout << "solver succeeded, time elapsed: " << elapsed << std::endl;
+
+        parser.save(output_filename);
+    } else {
+        std::cout << "solver failed" << std::endl;
+    }
+
     return 0;
 }
 

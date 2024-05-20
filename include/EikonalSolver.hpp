@@ -1,7 +1,9 @@
 
-#include <iostream>
+#ifndef EIKONAL_SOLVER
+#define EIKONAL_SOLVER
+
 #include <vector>
-#include <Mesh.h>
+#include "Mesh.hpp"
 
 namespace Eikonal {
     template<int MESH_SIZE>
@@ -22,3 +24,5 @@ namespace Eikonal {
     template
     class EikonalSolver<4>;
 }
+
+#endif //EIKONAL_SOLVER

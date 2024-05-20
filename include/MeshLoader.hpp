@@ -1,7 +1,9 @@
 
-#include <Mesh.h>
-#include <EikonalTraits.hpp>
-#include <VtkParser.hpp>
+#ifndef MESH_LOADER
+#define MESH_LOADER
+
+#include "Mesh.hpp"
+#include "VtkParser.hpp"
 #include <vector>
 
 namespace Eikonal {
@@ -26,3 +28,5 @@ namespace Eikonal {
     template
     class MeshLoader<4>;
 }
+
+#endif //MESH_LOADER

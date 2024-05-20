@@ -1,5 +1,7 @@
 
-#include <Eigen/Core>
+#ifndef LOCAL_SOLVER
+#define LOCAL_SOLVER
+
 #include "EikonalTraits.hpp"
 
 namespace Eikonal {
@@ -62,3 +64,5 @@ namespace Eikonal {
     class LocalSolver<4>;
 
 }
+
+#endif //LOCAL_SOLVER

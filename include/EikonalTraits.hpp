@@ -1,4 +1,7 @@
 
+#ifndef EIKONAL_TRAITS
+#define EIKONAL_TRAITS
+
 #include <Eigen/Core>
 
 namespace Eikonal {
@@ -22,3 +25,5 @@ namespace std {
         }
     };
 }
+
+#endif //EIKONAL_TRAITS

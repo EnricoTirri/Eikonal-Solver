@@ -1,4 +1,7 @@
 
+#ifndef EIKONAL_MATH
+#define EIKONAL_MATH
+
 #include <cmath>
 
 namespace Eikonal {
@@ -59,3 +62,5 @@ namespace Eikonal {
     }
 
 }
+
+#endif //EIKONAL_MATH

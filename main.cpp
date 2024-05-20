@@ -2,11 +2,11 @@
 #pragma ide diagnostic ignored "cert-err34-c"
 
 #include <iostream>
-#include <VtkParser.hpp>
+#include "VtkParser.hpp"
 #include <vector>
-#include <Mesh.h>
-#include <MeshLoader.hpp>
-#include <EikonalSolver.hpp>
+#include "Mesh.hpp"
+#include "MeshLoader.hpp"
+#include "EikonalSolver.hpp"
 
 using namespace Eikonal;
 

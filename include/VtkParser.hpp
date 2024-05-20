@@ -1,4 +1,7 @@
 
+#ifndef VTK_PARSER
+#define VTK_PARSER
+
 #include <fstream>
 #include <utility>
 #include <array>
@@ -73,3 +76,5 @@ private:
 
     void ascii_saver(std::ofstream &output);
 };
+
+#endif //VTK_PARSER

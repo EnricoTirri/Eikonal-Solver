@@ -1,9 +1,9 @@
 
-#include <MeshLoader.hpp>
-#include <Mesh.h>
+#include "MeshLoader.hpp"
+#include "Mesh.hpp"
 #include <vector>
-#include <EikonalTraits.hpp>
-#include <VtkParser.hpp>
+#include "EikonalTraits.hpp"
+#include "VtkParser.hpp"
 #include <array>
 
 #ifdef MSHLOADER_VERBOSE
@@ -12,6 +12,7 @@
 using std::cout;
 using std::endl;
 #endif
+
 namespace Eikonal {
     template<size_t MESHSIZE>
     int

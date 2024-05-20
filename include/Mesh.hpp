@@ -1,8 +1,9 @@
 
-#include <Eigen/Core>
+#ifndef MESH
+#define MESH
+
 #include <vector>
-#include <memory>
-#include <EikonalTraits.hpp>
+#include "EikonalTraits.hpp"
 
 namespace Eikonal {
     template<std::size_t MESHSIZE>
@@ -17,3 +18,5 @@ namespace Eikonal {
         std::vector<int32_t> elementAdjacentPointList;
     };
 }
+
+#endif //MESH

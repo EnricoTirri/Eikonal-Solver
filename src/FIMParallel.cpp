@@ -54,39 +54,40 @@ namespace Eikonal {
         }
     }
 
-    inline void applyScan(std::vector<int> &active) {
+    inline void applyScanAndPack(std::vector<int> &active, std::vector<int> &reducedActive) {
         //PARALLEL SCAN FOR ACTIVE LIST PACK INDICES
-        for (int i = 0; i < std::log2(active.size()); i++) {
-            int stride = static_cast<int>(pow(2, i));
-            int step = 2 * stride;
-#pragma omp parallel for
-            for (int k = step - 1; k < active.size(); k += step) {
-                active[k] += active[k - stride];
+            for (int i = 0; i < std::log2(active.size()); ++i) {
+                int stride = static_cast<int>(pow(2, i));
+                int step = 2 * stride;
+#pragma omp for
+                for (int k = step - 1; k < active.size(); k += step) {
+                    active[k] += active[k - stride];
+                }
+#pragma omp barrier
             }
-        }
 
-        for (int i = std::log2(active.size()) - 1; i > 0; i--) {
-            int stride = static_cast<int>(pow(2, i));
-            int step = stride / 2;
-#pragma omp parallel for
-            for (int k = stride - 1; k < active.size() - step; k += stride) {
-                active[k + step] += active[k];
+            for (int i = std::log2(active.size()) - 1; i > 0; i--) {
+                int stride = static_cast<int>(pow(2, i));
+                int step = stride / 2;
+#pragma omp for
+                for (int k = stride - 1; k < active.size() - step; k += stride) {
+                    active[k + step] += active[k];
+                }
+#pragma omp barrier
             }
-        }
-    }
-
-    inline void applyPack(const std::vector<int> &active, std::vector<int> &reducedActive) {
-        reducedActive.resize(active.back());
-#pragma omp parallel
-        {
-            for (int i = 0; i < active.size(); ++i) {
+#pragma omp master
+            {
+                reducedActive.resize(active.back());
+            }
+#pragma omp barrier
+#pragma omp for
+            for (int i = 0;i < active.size();++i) {
                 if (active[i] > 0) {
                     if (i == 0 || active[i - 1] < active[i]) {
                         reducedActive[active[i] - 1] = i;
                     }
                 }
             }
-        }
     }
 
     template<int MESH_SIZE>
@@ -130,12 +131,13 @@ namespace Eikonal {
                 newValues[i - elRangeStart] = sol;
             }
 
-            for(int step=1; step<newValues.size(); step*=2){
-#pragma omp parallel for
-                for(int j=0; j<newValues.size()-step; j+=step){
-                    if(newValues[j] > newValues[j+step])
-                        newValues[j] = newValues[j+step];
+            for (int step = 1; step < newValues.size(); step *= 2) {
+#pragma omp for
+                for (int j = 0; j < newValues.size() - step; j += step) {
+                    if (newValues[j] > newValues[j + step])
+                        newValues[j] = newValues[j + step];
                 }
+#pragma omp barrier
             }
         }
     }
@@ -160,12 +162,15 @@ namespace Eikonal {
         /* ---------------------- INITIALIZATION --------------------- */
         U.resize(data.points.size());
         active.resize(data.points.size());
+        converged.resize(data.points.size());
         initialize<MESH_SIZE>(U, X, data, active, MAXF);
         /* ----------------------------------------------------------- */
 
         /* ------------------- PACK OF ACTIVE LIST ------------------- */
-        applyScan(active);
-        applyPack(active, reducedActive);
+#pragma omp parallel
+        {
+            applyScanAndPack(active, reducedActive);
+        }
         /* ----------------------------------------------------------- */
 
 
@@ -180,38 +185,36 @@ namespace Eikonal {
             std::cout << "Iteration: " << iteration << "\tActiveList size: " << active.size() << std::endl;
 #endif
 
-            /* --------------- UPDATE ALL ACTIVE AGGLOMERATES ----------------- */
-
-            converged.resize(reducedActive.size());
 #pragma omp parallel
             {
+                /* --------------- UPDATE ALL ACTIVE AGGLOMERATES ----------------- */
+#pragma omp for
+                for (int i = 0; i < active.size(); ++i)
+                    converged[i] = -1;
+
 #pragma omp for
                 for (int i = 0; i < reducedActive.size(); ++i) {
                     std::vector<double> newValues;
-                    converged[i] = -1;
 
                     int aggID = reducedActive[i];
 
                     updateAgglomerate<MESH_SIZE>(aggID, newValues, U, data, 5000);
 
                     if (U[aggID] > newValues[0]) {
-                        converged[i] = newValues[0];
+                        converged[aggID] = newValues[0];
                     }
                 }
-            }
-            /* ---------------------------------------------------------------- */
+                /* ---------------------------------------------------------------- */
 
-            /* - IF AGGLOMERATE HAS CONVERGED, ACTIVATE ADJACENT AGGLOMERATES - */
-#pragma omp parallel
-            {
+                /* - IF AGGLOMERATE HAS CONVERGED, ACTIVATE ADJACENT AGGLOMERATES - */
 #pragma omp for
                 for (int i = 0; i < active.size(); ++i)
                     active[i] = 0;
 #pragma omp for
                 for (int i = 0; i < reducedActive.size(); ++i) {
-                    if (converged[i] > 0) {
-                        int pId = reducedActive[i];
-                        U[pId] = converged[i];
+                    int pId = reducedActive[i];
+                    if (converged[pId] > 0) {
+                        U[pId] = converged[pId];
 
                         int elRS = data.adjPointPtr[pId];
                         int elRE = data.adjPointPtr[pId + 1];
@@ -227,51 +230,49 @@ namespace Eikonal {
                         }
                     }
                 }
-            }
             /* ----------------------------------------------------------------- */
 
             /* ------------------- PACK OF ACTIVE LIST ------------------- */
-            applyScan(active);
-            applyPack(active, reducedActive);
+            applyScanAndPack(active, reducedActive);
             /* ----------------------------------------------------------- */
 
 
             /* -------- CHECK IF ACTIVE AGGLOMERATES CONVERGE ----------------- */
 
-            converged.resize(reducedActive.size());
-#pragma omp parallel
-            {
+#pragma omp for
+                for (int i = 0; i < active.size(); i++)
+                    converged[i] = -1;
+
 #pragma omp for
                 for (int i = 0; i < reducedActive.size(); ++i) {
                     std::vector<double> newValues;
-                    converged[i] = -1;
 
                     int aggID = reducedActive[i];
 
                     updateAgglomerate<MESH_SIZE>(aggID, newValues, U, data, 1);
 
                     if (U[aggID] > newValues[0]) {
-                        converged[i] = newValues[0];
+                        converged[aggID] = newValues[0];
                     }
                 }
 
 #pragma omp for
-                for(int i=0; i<active.size(); ++i){
-                    active[i]=0;
+                for (int i = 0; i < active.size(); ++i) {
+                    active[i] = 0;
                 }
 
 #pragma omp for
-                for(int i=0; i<reducedActive.size(); ++i){
-                    if(converged[i]>0)
-                        active[reducedActive[i]]=1;
+                for (int i = 0; i < reducedActive.size(); ++i) {
+                    int ptID = reducedActive[i];
+                    if (converged[ptID] > 0)
+                        active[ptID] = 1;
                 }
-            }
             /* ---------------------------------------------------------------- */
 
             /* ------------------- PACK OF ACTIVE LIST ------------------- */
-            applyScan(active);
-            applyPack(active, reducedActive);
+            applyScanAndPack(active, reducedActive);
             /* ----------------------------------------------------------- */
+            }
         }
 
         return true;

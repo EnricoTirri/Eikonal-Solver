@@ -158,19 +158,19 @@ namespace Eikonal {
         std::vector<int> reducedActive;
         std::vector<double> converged;
 
-        /* ---------------------- INITIALIZATION --------------------- */
+        // ---------------------- INITIALIZATION --------------------- //
         U.resize(data.points.size());
         active.resize(data.points.size());
         converged.resize(data.points.size());
         initialize<MESH_SIZE>(U, X, data, active, MAXF);
-        /* ----------------------------------------------------------- */
+        // ----------------------------------------------------------- //
 
-        /* ------------------- PACK OF ACTIVE LIST ------------------- */
+        // ------------------- PACK OF ACTIVE LIST ------------------- //
 #pragma omp parallel // do parallel region work for code inside a function call?
         {
             applyScanAndPack(active, reducedActive);
         }
-        /* ----------------------------------------------------------- */
+        // ----------------------------------------------------------- //
 
 
 #ifdef SOLVER_VERBOSE
@@ -186,11 +186,12 @@ namespace Eikonal {
 
 #pragma omp parallel
             {
-                /* --------------- UPDATE ALL ACTIVE AGGLOMERATES ----------------- */
+                // --------------- UPDATE ALL ACTIVE AGGLOMERATES ----------------- //
 #pragma omp for
-                for (int i = 0; i < active.size(); ++i)
+                for (int i = 0; i < active.size(); ++i) {
                     converged[i] = -1;
-
+                    active[i] = 0;
+                }
 #pragma omp for
                 for (int i = 0; i < reducedActive.size(); ++i) {
                     std::vector<double> newValues;
@@ -203,12 +204,10 @@ namespace Eikonal {
                         converged[aggID] = newValues[0];
                     }
                 }
-                /* ---------------------------------------------------------------- */
+                // ---------------------------------------------------------------- //
 
-                /* - IF AGGLOMERATE HAS CONVERGED, ACTIVATE ADJACENT AGGLOMERATES - */
-#pragma omp for
-                for (int i = 0; i < active.size(); ++i)
-                    active[i] = 0;
+                // - IF AGGLOMERATE HAS CONVERGED, ACTIVATE ADJACENT AGGLOMERATES - //
+
 #pragma omp for
                 for (int i = 0; i < reducedActive.size(); ++i) {
                     int pId = reducedActive[i];
@@ -229,19 +228,25 @@ namespace Eikonal {
                         }
                     }
                 }
-            /* ----------------------------------------------------------------- */
-
-            /* ------------------- PACK OF ACTIVE LIST ------------------- */
-            applyScanAndPack(active, reducedActive);
-            /* ----------------------------------------------------------- */
-
-
-            /* -------- CHECK IF ACTIVE AGGLOMERATES CONVERGE ----------------- */
 
 #pragma omp for
-                for (int i = 0; i < active.size(); i++)
-                    converged[i] = -1;
+                for (int i = 0; i < reducedActive.size(); ++i) {
+                    int pId = reducedActive[i];
+                    if(converged[i] > 0)
+                        active[pId] = 0;
+                }
 
+            // ------------------- PACK OF ACTIVE LIST ------------------- //
+            applyScanAndPack(active, reducedActive);
+            // ----------------------------------------------------------- //
+
+
+            // -------- CHECK IF ACTIVE AGGLOMERATES CONVERGE ----------------- //
+#pragma omp for
+                for (int i = 0; i < active.size(); i++) {
+                    converged[i] = -1;
+                    active[i] = 0;
+                }
 #pragma omp for
                 for (int i = 0; i < reducedActive.size(); ++i) {
                     std::vector<double> newValues;
@@ -256,21 +261,19 @@ namespace Eikonal {
                 }
 
 #pragma omp for
-                for (int i = 0; i < active.size(); ++i) {
-                    active[i] = 0;
-                }
-
-#pragma omp for
                 for (int i = 0; i < reducedActive.size(); ++i) {
                     int ptID = reducedActive[i];
                     if (converged[ptID] > 0)
                         active[ptID] = 1;
                 }
-            /* ---------------------------------------------------------------- */
+            // ---------------------------------------------------------------- //
 
-            /* ------------------- PACK OF ACTIVE LIST ------------------- */
+            // ----------------------------------------------------------------- //
+
+            // ------------------- PACK OF ACTIVE LIST ------------------- //
             applyScanAndPack(active, reducedActive);
-            /* ----------------------------------------------------------- */
+            // ----------------------------------------------------------- //
+
             }
         }
 

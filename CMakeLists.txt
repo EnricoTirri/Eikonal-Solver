@@ -73,6 +73,7 @@ endif ()
 
 file(GLOB SOURCES "src/*.cpp")
 add_executable(${EXE_NAME} main.cpp ${SOURCES})
+add_executable("test" test.cpp ${SOURCES})
 
 # ------------------------------------------------------------ #
 

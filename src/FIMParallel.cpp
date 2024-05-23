@@ -9,7 +9,6 @@
 #include "LocalSolver.hpp"
 #include <cmath>
 
-
 namespace Eikonal {
     using Point = Eikonal::Traits::Point;
 
@@ -59,8 +58,8 @@ namespace Eikonal {
             for (int i = 0; i < std::log2(active.size()); ++i) {
                 int stride = static_cast<int>(pow(2, i));
                 int step = 2 * stride;
-#pragma omp for
-                for (int k = step - 1; k < active.size(); k += step) {
+#pragma omp for simd
+                for (int k = step - 1; k < active.size(); k += step) {// it skip the last iteration because step is out of bounds of active, step +- 16M and active.size() =~ 13M
                     active[k] += active[k - stride];
                 }
 #pragma omp barrier
@@ -75,7 +74,7 @@ namespace Eikonal {
                 }
 #pragma omp barrier
             }
-#pragma omp master
+#pragma omp master //wouldn't single be better here? or do we need to specify the master thread?
             {
                 reducedActive.resize(active.back());
             }
@@ -167,7 +166,7 @@ namespace Eikonal {
         /* ----------------------------------------------------------- */
 
         /* ------------------- PACK OF ACTIVE LIST ------------------- */
-#pragma omp parallel
+#pragma omp parallel // do parallel region work for code inside a function call?
         {
             applyScanAndPack(active, reducedActive);
         }

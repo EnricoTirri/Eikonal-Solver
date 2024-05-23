@@ -70,7 +70,10 @@ namespace Eikonal {
         int iteration = 0;
 #endif
 
+        std::vector<bool> activeSet(data.points.size());
         while (!active.empty()) {
+            std::fill(activeSet.begin(), activeSet.end(), false);
+
 
 #ifdef SOLVER_VERBOSE
             iteration++;
@@ -83,7 +86,6 @@ namespace Eikonal {
 
                 int elRangeStart = data.adjPointPtr[v];
                 int elRangeEnd = data.adjPointPtr[v + 1];
-
                 for (std::size_t i = elRangeStart; i < elRangeEnd; i++) {
                     int elID = data.pointAdjacentElementList[i];
 
@@ -136,12 +138,15 @@ namespace Eikonal {
                     for (int i = pntRangeStart; i < pntRangeEnd; ++i) {
                         int tpntID = data.elementAdjacentPointList[i];
 
-                        // add to active set
-                        activeNew.push_back(tpntID);
+                        if (!activeSet[tpntID]) {
+                            activeSet[tpntID] = true;
+                            // add to active set
+                            activeNew.push_back(tpntID);
+                        }
                     }
                 }
             }
-            removeDuplicates(activeNew);
+            //removeDuplicates(activeNew);
 
             active.clear();
             for (const int &v: activeNew) {

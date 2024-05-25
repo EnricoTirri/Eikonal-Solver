@@ -7,7 +7,7 @@
 namespace Eikonal {
 
     template<int MESH_SIZE>
-    double LocalSolver<MESH_SIZE>::operator()() {
+    inline double LocalSolver<MESH_SIZE>::operator()() {
         if constexpr (MESH_SIZE == 3) {
             const double t12 = values[1] - values[0];
             SideFunction fun(M(0), M(1), M(2), t12);

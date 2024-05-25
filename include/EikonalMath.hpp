@@ -17,7 +17,7 @@ namespace Eikonal {
             return (x * a + b) / std::sqrt(2 * x * b + x * x * a + c) - dt;
         }
     };
-
+#pragma inline
     int sameSign(double a, double b) {
         // Load the double 'a' and 'b' into 128-bit vectors
         __m128d va = _mm_set_sd(a);

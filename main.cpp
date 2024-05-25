@@ -64,7 +64,7 @@ int main(int argc, char *argv[]) {
         if (loader.load(mesh, parser, pointData, elementData) != 1) {
             std::cout << "unable to load the mesh" << std::endl;
             return 1;
-        }else{
+        } else {
             std::cout << "loaded" << std::endl;
         }
 
@@ -93,7 +93,7 @@ int main(int argc, char *argv[]) {
         if (loader.load(mesh, parser, pointData, elementData) != 1) {
             std::cout << "unable to load the mesh" << std::endl;
             return 1;
-        }else{
+        } else {
             std::cout << "loaded" << std::endl;
         }
 

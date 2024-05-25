@@ -80,7 +80,7 @@ namespace Eikonal {
                     // Otherwise solve local problem with this point as unknown and the others as base
                     std::array<Point, MESH_SIZE> base;
                     std::size_t k = 0;
-                    Eigen::Matrix<double, MESH_SIZE, 1> values;
+                    std::array<double, MESH_SIZE> values;
                     for (std::size_t j = 0; j < MESH_SIZE; j++) {
                         int tpId = data.elementAdjacentPointList[pointRangeStart+j];
                         if (tpId == pointID) {

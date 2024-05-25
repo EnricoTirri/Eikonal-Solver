@@ -11,7 +11,7 @@ namespace Eikonal {
     private:
         using MprimeMatrix = Eigen::Matrix<double, 6 - 3 * (4 - MESH_SIZE), 1>;
 
-        Eigen::Matrix<double, MESH_SIZE, 1> &values;
+        std::array<double, MESH_SIZE> &values;
         int max_iters;
         double tol;
 
@@ -49,7 +49,7 @@ namespace Eikonal {
 
     public:
         LocalSolver(const Traits::VelocityM &V, const std::array<Traits::Point, MESH_SIZE> &points,
-                    Eigen::Matrix<double, MESH_SIZE, 1> &values, int max_iters, double tol)
+                    std::array<double, MESH_SIZE> &values, int max_iters, double tol)
                 : values(values), max_iters(max_iters), tol(tol) {
             compute_MPrime(V, points);
         }

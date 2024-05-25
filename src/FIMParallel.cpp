@@ -1,5 +1,4 @@
 
-
 #if FIMP
 
 #include "EikonalSolver.hpp"
@@ -104,7 +103,7 @@ namespace Eikonal {
 
                 std::array<Point, MESH_SIZE> base;
                 int k = 0;
-                Eigen::Matrix<double, MESH_SIZE, 1> values;
+                std::array<double, MESH_SIZE> values;
                 for (int j = 0; j < MESH_SIZE; j++) {
                     int tpId = data.elementAdjacentPointList[pntRangeStart + j];
                     if (tpId != v) {

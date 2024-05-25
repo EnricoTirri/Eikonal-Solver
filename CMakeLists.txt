@@ -25,39 +25,7 @@ endif()
 if((${SOLVER_VERBOSE} STREQUAL "TRUE") OR (${VERBOSE} STREQUAL "TRUE"))
     add_compile_definitions(SOLVER_VERBOSE)
 endif()
-if (NOT DEFINED EIGEN_PATH)
-    set(EIGEN_PATH "/usr/include/eigen3")
-endif ()
 # ------------------------------------------------------------- #
-
-# ----------- Method Selector --------------------------------- #
-
-
-#if (NOT DEFINED METHOD)
-#    set(METHOD FMM)
-#endif()
-#
-#if (${METHOD} STREQUAL "PFMM" OR ${METHOD} STREQUAL "pfmm")
-#    add_compile_definitions(PFMM) # Enable Patch-Parallelized Fast Marching Method
-#
-#elseif (${METHOD} STREQUAL "FIMP" OR ${METHOD} STREQUAL "fimp")
-#    add_compile_definitions(FIMP) # Enable Fast Iterative Method with OpenMP Parallelization
-#
-#elseif (${METHOD} STREQUAL "FMMP" OR ${METHOD} STREQUAL "fmmp")
-#    add_compile_definitions(FMMP) # Enable Fast Marching Method with OpenMP Parallelization
-#
-#elseif (${METHOD} STREQUAL "FIM" OR ${METHOD} STREQUAL "fim")
-#    add_compile_definitions(FIM) # Enable Fast Iterative Method
-#
-#else () # DEFAULT
-#    add_compile_definitions(FMM) # Enable Fast Marching Method
-#
-#endif()
-
-
-
-
-# ------------------------------------------------------------ #
 
 # ------------- OpenMP Options ------------------------------- #
 
@@ -87,6 +55,9 @@ file(GLOB SOURCES "src/*.cpp")
 include_directories(include)
 
 ## EIGEN
+if (NOT DEFINED EIGEN_PATH)
+    set(EIGEN_PATH "/usr/include/eigen3")
+endif ()
 include_directories(${EIGEN_PATH})
 
 ## METIS
@@ -95,7 +66,6 @@ include_directories(${EIGEN_PATH})
 if (NOT DEFINED METIS_LIB)
     set(METIS_LIB "/usr/lib/libmetis.so")
 endif ()
-
 
 
 #first method FMM
@@ -129,9 +99,6 @@ add_executable(eikonal_solver_FIM main.cpp ${SOURCES})
 target_compile_definitions(eikonal_solver_FIM PRIVATE FIM)
 target_link_libraries(eikonal_solver_FIM ${METIS_LIB})
 
-#add_executable(${EXE_NAME} main.cpp ${SOURCES})
-#
-#target_link_libraries(${EXE_NAME} ${METIS_LIB})
 
 # ----------------------------------------------------------- #
 

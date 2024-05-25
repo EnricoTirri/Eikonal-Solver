@@ -99,35 +99,35 @@ endif ()
 
 
 #first method FMM
-add_compile_definitions(FMM)
+
 add_executable(eikonal_solver_FMM main.cpp ${SOURCES})
+target_compile_definitions(eikonal_solver_FMM PRIVATE FMM)
 target_link_libraries(eikonal_solver_FMM ${METIS_LIB})
 
-remove_definitions(FMM)
 
 #second method FIMP
-add_compile_definitions(FIMP)
+
 add_executable(eikonal_solver_FIMP main.cpp ${SOURCES})
+target_compile_definitions(eikonal_solver_FIMP PRIVATE FIMP)
 target_link_libraries(eikonal_solver_FIMP ${METIS_LIB})
-remove_definitions(FIMP)
+
 
 #third method FMMP
-add_compile_definitions(FMMP)
+
 add_executable(eikonal_solver_FMMP main.cpp ${SOURCES})
+target_compile_definitions(eikonal_solver_FMMP PRIVATE FMMP)
 target_link_libraries(eikonal_solver_FMMP ${METIS_LIB})
-remove_definitions(FMMP)
 
 #fourth method PFMM
-add_compile_definitions(PFMM)
-add_executable(eikonal_solver_PFMM main.cpp ${SOURCES})
-target_link_libraries(eikonal_solver_PFMM ${METIS_LIB})
-remove_definitions(PFMM)
 
+add_executable(eikonal_solver_PFMM main.cpp ${SOURCES})
+target_compile_definitions(eikonal_solver_PFMM PRIVATE PFMM)
+target_link_libraries(eikonal_solver_PFMM ${METIS_LIB})
 #fifth method FIM
-add_compile_definitions(FIM)
+
 add_executable(eikonal_solver_FIM main.cpp ${SOURCES})
+target_compile_definitions(eikonal_solver_FIM PRIVATE FIM)
 target_link_libraries(eikonal_solver_FIM ${METIS_LIB})
-remove_definitions(FIM)
 
 #add_executable(${EXE_NAME} main.cpp ${SOURCES})
 #

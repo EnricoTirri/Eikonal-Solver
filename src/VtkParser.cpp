@@ -158,8 +158,10 @@ void VtkParser::ascii_parser(std::ifstream &in) {
 
 void VtkParser::save(const std::string &filename) {
     ofstream out(filename);
-    if (out.bad())
-        return;
+    if (out.bad()) {
+        std::cout << "Bad output filename" << std::endl;
+        out.open("./temp_save.vtk");
+    }
 
 #ifdef PARSER_VERBOSE
     timespec start, end;
@@ -168,7 +170,8 @@ void VtkParser::save(const std::string &filename) {
 #endif
 
     ascii_saver(out);
-
+    out.close();
+    
 #ifdef PARSER_VERBOSE
     clock_gettime(CLOCK_MONOTONIC, &end);
     auto elapsed = static_cast<double>((end.tv_sec - start.tv_sec));

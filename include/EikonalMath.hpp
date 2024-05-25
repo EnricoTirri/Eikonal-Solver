@@ -3,7 +3,7 @@
 #define EIKONAL_MATH
 
 #include <cmath>
-
+#include "immintrin.h"
 namespace Eikonal {
 
     class SideFunction {
@@ -18,19 +18,24 @@ namespace Eikonal {
         }
     };
 
-    int not_same_sign(const double a, const double b) {
-        int sign_bit;
-        double temp;
-        asm (
-                "vpxor  %[a], %[b],%[temp]\n\t"     // XOR the signs of a and b
-                "vmovmskpd %[temp], %[sign]\n\t"  // Move the sign bits to the lower 2 bits of b
-                "and $1, %[sign]\n\t"      // Isolate the least significant bit
-                :  [sign] "=r"(sign_bit),[temp] "=x"(temp)
-        : [a] "x"(a), [b] "x"(b)
-        :
-        );
-        return sign_bit;
+    int sameSign(double a, double b) {
+        // Load the double 'a' and 'b' into 128-bit vectors
+        __m128d va = _mm_set_sd(a);
+        __m128d vb = _mm_set_sd(b);
+
+        // Perform bitwise XOR on the vectors, this will set the sign bit if the signs are different
+        __m128d vresult = _mm_xor_pd(va, vb);
+
+
+        // Extract the sign bits of the result and not them, so that the sign bit is set if the signs are the same
+        int sign = ~_mm_movemask_pd(vresult);
+
+        // _mm_movemask_pd extract two sign bits, because it operates on packed doubles, we only need one bit
+        return sign & 1;
     }
+
+
+
 
 
     inline double constraintBisection(SideFunction f, const int max_iters, const double tol) {
@@ -38,7 +43,7 @@ namespace Eikonal {
         double b = 1;
         double fa = f(a);
         double fb = f(b);
-        if (!not_same_sign(fa, fb)) {
+        if (sameSign(fa, fb)) {
             if (std::abs(fa) < std::abs(fb))
                 return 0;
             else
@@ -50,7 +55,7 @@ namespace Eikonal {
         do {
             k = (a + b) / 2;
             res = f(k);
-            if (!not_same_sign(fa, res)) {
+            if (sameSign(fa, res)) {
                 a = k;
                 fa = res;
             } else {

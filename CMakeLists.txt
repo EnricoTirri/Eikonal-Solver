@@ -3,7 +3,7 @@ project(eikonal_solver)
 
 set(CMAKE_CXX_STANDARD 23)
 
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3 -march=native -fopenmp")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}  -O3 -march=native -fopenmp")
 
 # ------------------- Verbose output Options ------------------ #
 
@@ -25,31 +25,37 @@ endif()
 if((${SOLVER_VERBOSE} STREQUAL "TRUE") OR (${VERBOSE} STREQUAL "TRUE"))
     add_compile_definitions(SOLVER_VERBOSE)
 endif()
-
+if (NOT DEFINED EIGEN_PATH)
+    set(EIGEN_PATH "/usr/include/eigen3")
+endif ()
 # ------------------------------------------------------------- #
 
 # ----------- Method Selector --------------------------------- #
 
-if (NOT DEFINED METHOD)
-    set(METHOD FMM)
-endif()
 
-if (${METHOD} STREQUAL "PFMM" OR ${METHOD} STREQUAL "pfmm")
-    add_compile_definitions(PFMM) # Enable Patch-Parallelized Fast Marching Method
+#if (NOT DEFINED METHOD)
+#    set(METHOD FMM)
+#endif()
+#
+#if (${METHOD} STREQUAL "PFMM" OR ${METHOD} STREQUAL "pfmm")
+#    add_compile_definitions(PFMM) # Enable Patch-Parallelized Fast Marching Method
+#
+#elseif (${METHOD} STREQUAL "FIMP" OR ${METHOD} STREQUAL "fimp")
+#    add_compile_definitions(FIMP) # Enable Fast Iterative Method with OpenMP Parallelization
+#
+#elseif (${METHOD} STREQUAL "FMMP" OR ${METHOD} STREQUAL "fmmp")
+#    add_compile_definitions(FMMP) # Enable Fast Marching Method with OpenMP Parallelization
+#
+#elseif (${METHOD} STREQUAL "FIM" OR ${METHOD} STREQUAL "fim")
+#    add_compile_definitions(FIM) # Enable Fast Iterative Method
+#
+#else () # DEFAULT
+#    add_compile_definitions(FMM) # Enable Fast Marching Method
+#
+#endif()
 
-elseif (${METHOD} STREQUAL "FIMP" OR ${METHOD} STREQUAL "fimp")
-    add_compile_definitions(FIMP) # Enable Fast Iterative Method with OpenMP Parallelization
 
-elseif (${METHOD} STREQUAL "FMMP" OR ${METHOD} STREQUAL "fmmp")
-    add_compile_definitions(FMMP) # Enable Fast Marching Method with OpenMP Parallelization
 
-elseif (${METHOD} STREQUAL "FIM" OR ${METHOD} STREQUAL "fim")
-    add_compile_definitions(FIM) # Enable Fast Iterative Method
-
-else () # DEFAULT
-    add_compile_definitions(FMM) # Enable Fast Marching Method
-
-endif()
 
 # ------------------------------------------------------------ #
 
@@ -72,8 +78,7 @@ if (NOT DEFINED ${EXE_NAME})
 endif ()
 
 file(GLOB SOURCES "src/*.cpp")
-add_executable(${EXE_NAME} main.cpp ${SOURCES})
-add_executable("test" test.cpp ${SOURCES})
+
 
 # ------------------------------------------------------------ #
 
@@ -90,7 +95,43 @@ include_directories(${EIGEN_PATH})
 if (NOT DEFINED METIS_LIB)
     set(METIS_LIB "/usr/lib/libmetis.so")
 endif ()
-target_link_libraries(${EXE_NAME} ${METIS_LIB})
+
+
+
+#first method FMM
+add_compile_definitions(FMM)
+add_executable(eikonal_solver_FMM main.cpp ${SOURCES})
+target_link_libraries(eikonal_solver_FMM ${METIS_LIB})
+
+remove_definitions(FMM)
+
+#second method FIMP
+add_compile_definitions(FIMP)
+add_executable(eikonal_solver_FIMP main.cpp ${SOURCES})
+target_link_libraries(eikonal_solver_FIMP ${METIS_LIB})
+remove_definitions(FIMP)
+
+#third method FMMP
+add_compile_definitions(FMMP)
+add_executable(eikonal_solver_FMMP main.cpp ${SOURCES})
+target_link_libraries(eikonal_solver_FMMP ${METIS_LIB})
+remove_definitions(FMMP)
+
+#fourth method PFMM
+add_compile_definitions(PFMM)
+add_executable(eikonal_solver_PFMM main.cpp ${SOURCES})
+target_link_libraries(eikonal_solver_PFMM ${METIS_LIB})
+remove_definitions(PFMM)
+
+#fifth method FIM
+add_compile_definitions(FIM)
+add_executable(eikonal_solver_FIM main.cpp ${SOURCES})
+target_link_libraries(eikonal_solver_FIM ${METIS_LIB})
+remove_definitions(FIM)
+
+#add_executable(${EXE_NAME} main.cpp ${SOURCES})
+#
+#target_link_libraries(${EXE_NAME} ${METIS_LIB})
 
 # ----------------------------------------------------------- #
 

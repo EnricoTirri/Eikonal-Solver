@@ -21,14 +21,14 @@ namespace Eikonal {
             if constexpr (MESH_SIZE == 3)
                 return std::sqrt(l1 * l1 * M(0) + 2 * l1 * M(1) + M(2));
             else
-                return 1;
+                return 0;
         }
 
         inline double distance(const double l1, const double l2) {
             if constexpr (MESH_SIZE == 4)
                 return std::sqrt(l1 * l1 * M(0) + l2 * l2 * M(3) + 2 * (l1 * l2 * M(1) + l1 * M(2) + l2 * M(4)) + M(5));
             else
-                return 1;
+                return 0;
         }
 
         inline void compute_MPrime(const Traits::VelocityM &V, const std::array<Traits::Point, MESH_SIZE> &points) {

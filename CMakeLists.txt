@@ -62,7 +62,7 @@ endif ()
 # ------------- OpenMP Options ------------------------------- #
 
 if (NOT DEFINED OMP_NUM_THREADS)
-    set(OMP_NUM_THREADS 6)
+    set(OMP_NUM_THREADS 1)
 endif ()
 
 set(ENV{OMP_NUM_THREADS} ${OMP_NUM_THREADS})

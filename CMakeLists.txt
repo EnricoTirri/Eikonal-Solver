@@ -3,7 +3,7 @@ project(eikonal_solver)
 
 set(CMAKE_CXX_STANDARD 23)
 
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}  -O3 -march=native -fopenmp")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3 -march=native -fopenmp")
 
 # ------------------- Verbose output Options ------------------ #
 
@@ -67,6 +67,7 @@ if (NOT DEFINED METIS_LIB)
     set(METIS_LIB "/usr/lib/libmetis.so")
 endif ()
 
+# -------------- Methods definitions -------------------------- #
 
 #first method FMM
 
@@ -93,11 +94,18 @@ target_link_libraries(eikonal_solver_FMMP ${METIS_LIB})
 add_executable(eikonal_solver_PFMM main.cpp ${SOURCES})
 target_compile_definitions(eikonal_solver_PFMM PRIVATE PFMM)
 target_link_libraries(eikonal_solver_PFMM ${METIS_LIB})
+
 #fifth method FIM
 
 add_executable(eikonal_solver_FIM main.cpp ${SOURCES})
 target_compile_definitions(eikonal_solver_FIM PRIVATE FIM)
 target_link_libraries(eikonal_solver_FIM ${METIS_LIB})
+
+#sixth method FIM
+
+add_executable(eikonal_solver_FMMO main.cpp ${SOURCES})
+target_compile_definitions(eikonal_solver_FMMO PRIVATE FMMO)
+target_link_libraries(eikonal_solver_FMMO ${METIS_LIB})
 
 
 # ----------------------------------------------------------- #

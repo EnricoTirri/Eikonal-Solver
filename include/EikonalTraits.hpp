@@ -10,6 +10,13 @@ namespace Eikonal {
         using Point = Eigen::Matrix<double, 3, 1>;
         using VelocityM = Eigen::Matrix<double, 3, 3>;
     };
+
+    template<unsigned int MESH_SIZE>
+    class TTraits{
+    public:
+        using MprimeMatrix = Eigen::Matrix<double, 6 - 3 * (4 - MESH_SIZE), 1>;
+        using MeshPoints = std::array<Traits::Point, MESH_SIZE>;
+    };
 }
 
 namespace std {

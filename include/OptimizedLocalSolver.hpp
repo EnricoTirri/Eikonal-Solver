@@ -7,8 +7,8 @@ namespace Eikonal {
 
     template<int MESH_SIZE>
     class OptimizedLocalSolver {
-        using MprimeMatrix = Eigen::Matrix<double, 6 - 3 * (4 - MESH_SIZE), 1>;
-        using MeshPoints = std::array<Traits::Point, MESH_SIZE>;
+        using MprimeMatrix = TTraits<MESH_SIZE>::MprimeMatrix;
+        using MeshPoints = TTraits<MESH_SIZE>::MeshPoints;
 
         int max_iters;
         double tol;
@@ -121,6 +121,10 @@ namespace Eikonal {
         OptimizedLocalSolver(int max_iters, double tol, const Traits::VelocityM &V, const MeshPoints &points)
                 : max_iters(max_iters), tol(tol) {
             buildMprimeMatrix(V, points);
+        }
+
+        MprimeMatrix &getMprimeMatrix(){
+            return MT;
         }
 
         double operator()(const int &pointref, const std::array<double, MESH_SIZE> &pointValues);

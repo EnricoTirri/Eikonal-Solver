@@ -89,11 +89,11 @@ add_executable(eikonal_solver_FMMP main.cpp ${SOURCES})
 target_compile_definitions(eikonal_solver_FMMP PRIVATE FMMP)
 target_link_libraries(eikonal_solver_FMMP ${METIS_LIB})
 
-#fourth method PFMM
+#forth method FMMO
 
-add_executable(eikonal_solver_PFMM main.cpp ${SOURCES})
-target_compile_definitions(eikonal_solver_PFMM PRIVATE PFMM)
-target_link_libraries(eikonal_solver_PFMM ${METIS_LIB})
+add_executable(eikonal_solver_FMMO main.cpp ${SOURCES})
+target_compile_definitions(eikonal_solver_FMMO PRIVATE FMMO)
+target_link_libraries(eikonal_solver_FMMO ${METIS_LIB})
 
 #fifth method FIM
 
@@ -101,12 +101,34 @@ add_executable(eikonal_solver_FIM main.cpp ${SOURCES})
 target_compile_definitions(eikonal_solver_FIM PRIVATE FIM)
 target_link_libraries(eikonal_solver_FIM ${METIS_LIB})
 
-#sixth method FIM
+#sixth method PFIM
 
-add_executable(eikonal_solver_FMMO main.cpp ${SOURCES})
-target_compile_definitions(eikonal_solver_FMMO PRIVATE FMMO)
-target_link_libraries(eikonal_solver_FMMO ${METIS_LIB})
+#add_executable(eikonal_solver_PFIM main.cpp ${SOURCES})
+#target_compile_definitions(eikonal_solver_PFIM PRIVATE PFIM)
+#target_link_libraries(eikonal_solver_PFIM ${METIS_LIB})
 
+#seventh method PFIMC
+
+if(USECUDA)
+    enable_language(CUDA)
+
+    include_directories(include-cuda)
+
+    if (NOT DEFINED CUDA_BLOCK_SIZE)
+        set(CUDA_BLOCK_SIZE 128)
+    endif ()
+    add_compile_definitions(BLOCK_SIZE=${CUDA_BLOCK_SIZE})
+
+    file(GLOB CUDA_SOURCES "src-cuda/*.c*")
+    add_executable(eikonal_solver_PFIMC main.cpp ${SOURCES} ${CUDA_SOURCES})
+    target_compile_definitions(eikonal_solver_PFIMC PRIVATE PFIMC)
+    target_link_libraries(eikonal_solver_PFIMC ${METIS_LIB})
+    set_target_properties(eikonal_solver_PFIMC
+            PROPERTIES
+            CMAKE_CUDA_STANDARD 23
+            CUDA_SEPARABLE_COMPILATION ON
+    )
+endif ()
 
 # ----------------------------------------------------------- #
 

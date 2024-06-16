@@ -114,6 +114,21 @@ namespace Eikonal {
             int s01 = esgn(gcodes[0], gcodes[1], g2);
             int e2 = g2 / 2 - 1;
             M(2) = s01 * signs[0] * signs[1] * (MT(e0) + MT(e1) - MT(e2)) / 2;
+
+            if(MESH_SIZE == 4){
+                int e3 = gcodes[2] / 2 - 1;
+                M(3) = MT(e3);
+
+                int g4 = gcodes[1] xor gcodes[2];
+                int s12 = esgn(gcodes[1], gcodes[2], g4);
+                int e4 = g4 / 2 - 1;
+                M(4) = s12 * signs[1] * signs[2] * (MT(e1) + MT(e3) - MT(e4)) / 2;
+
+                int g5 = gcodes[0] xor gcodes[2];
+                int s02 = esgn(gcodes[0], gcodes[2], g5);
+                int e5 = g5 / 2 - 1;
+                M(5) = s02 * signs[0] * signs[2] * (MT(e0) + MT(e3) - MT(e5)) / 2;
+            }
         }
 
 

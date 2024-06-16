@@ -52,14 +52,14 @@ namespace Eikonal {
             adjPatchElementPointer[pnum + 1]++;
         }
 
-        // Create support vector for creation of patch-element adjacent list
-        std::vector<idx_t> tempAdjPtr(adjPatchElementPointer.size());
-        std::copy(adjPatchElementPointer.begin(), adjPatchElementPointer.end(), tempAdjPtr.data());
-
         // Create patch-element adjacent pointers list
         for (int i = 0; i < np; ++i) {
             adjPatchElementPointer[i + 1] += adjPatchElementPointer[i];
         }
+
+        // Create support vector for creation of patch-element adjacent list
+        std::vector<idx_t> tempAdjPtr(adjPatchElementPointer.size());
+        std::copy(adjPatchElementPointer.begin(), adjPatchElementPointer.end(), tempAdjPtr.data());
 
         // Create patch-element adjacent index list
         patchAdjacentElementList.resize(mesh.adjElementPtr.size() - 1);
@@ -78,14 +78,14 @@ namespace Eikonal {
             adjPatchNodePointer[pnum + 1]++;
         }
 
-        // Create support vector for creation of patch-element adjacent list
-        std::vector<idx_t> tempAdjPtr2(adjPatchNodePointer.size());
-        std::copy(adjPatchNodePointer.begin(), adjPatchNodePointer.end(), tempAdjPtr2.data());
-
         // Create patch-element adjacent pointers list
         for (int i = 0; i < np; ++i) {
             adjPatchNodePointer[i + 1] += adjPatchNodePointer[i];
         }
+
+        // Create support vector for creation of patch-element adjacent list
+        std::vector<idx_t> tempAdjPtr2(adjPatchNodePointer.size());
+        std::copy(adjPatchNodePointer.begin(), adjPatchNodePointer.end(), tempAdjPtr2.data());
 
         // Create patch-element adjacent index list
         patchAdjacentNodeList.resize(mesh.adjPointPtr.size() - 1);
@@ -200,9 +200,11 @@ namespace Eikonal {
         int n_elements = data.adjElementPtr.size() - 1;
         int n_nodes = data.points.size();
 
-        int patchSize = 1024;
+        int patchSize = BLOCK_SIZE;
 
-        int nPatches = 4;//(n_elements + patchSize) / patchSize;
+        int nPatches = (n_elements + patchSize) / patchSize;
+
+        std::cout << "N_PATCHES: "<< nPatches << std::endl;
 
         partitionMesh<MESH_SIZE>(nPatches, data, X, adjPatchPatchPtr, patchAdjPatchIdx, adjPatchElePtr, patchAdjEleIdx, adjPatchNodePtr, patchAdjNodeIdx, XPatches);
 

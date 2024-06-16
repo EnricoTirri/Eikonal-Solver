@@ -112,7 +112,7 @@ namespace Eikonal{
         getMprimeMatrix3(pointref, MT, valin, M, valout);
 
         double t12 = valout[1] - valout[0];
-        double l1 = constraintBisection(M(0), M(2), M(1), t12, 5000, 10e-6);
+        double l1 = constraintBisection(M(0), M(2), M(1), t12, 2, 10e-6);
         return -t12 * l1 + valout[1] + distance3(l1, M);
     }
 

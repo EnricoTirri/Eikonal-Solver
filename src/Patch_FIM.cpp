@@ -1,17 +1,15 @@
 
-#if PFIMC
+#if PFIM
 
 #include "metis.h"
 #include "EikonalSolver.hpp"
 #include <iostream>
-#include "GlobalSolverKernels.hpp"
-#include "OptimizedLocalSolver.hpp"
 
 namespace Eikonal {
 
     template<int MESH_SIZE>
     void EikonalSolver<MESH_SIZE>::print_spec() {
-        std::cout << "Patch Fast Iterative Method - CUDA accelerated" << std::endl;
+        std::cout << "Patch Fast Iterative Method" << std::endl;
     }
 
     template<int MESH_SIZE>
@@ -19,7 +17,6 @@ namespace Eikonal {
     partitionMesh(const int &npatch, const Mesh<MESH_SIZE> &mesh, const std::vector<int> &startingPoint,
                   std::vector<int> &adjPatchPtr, std::vector<int> &patchAdjacentPatchList,
                   std::vector<int> &adjPatchElementPointer, std::vector<int> &patchAdjacentElementList,
-                  std::vector<int> &adjPatchNodePointer, std::vector<int> &patchAdjacentNodeList,
                   std::vector<int> &startingPatches) {
 
         // ***************** METIS LIBRARY CALL *********************************************************//
@@ -41,7 +38,6 @@ namespace Eikonal {
 
         // Call metis lib
         METIS_PartMeshNodal(&ne, &nn, eptr.data(), eidx.data(), nullptr, nullptr, &np, nullptr, nullptr, &objval, epart.data(), npart.data());
-
         // ********************************************************************************************** //
 
         // *************** PATCH TO ELEMENT ADJACENT LIST CREATION *********************************//
@@ -57,7 +53,7 @@ namespace Eikonal {
         std::copy(adjPatchElementPointer.begin(), adjPatchElementPointer.end(), tempAdjPtr.data());
 
         // Create patch-element adjacent pointers list
-        for (int i = 0; i < np; ++i) {
+        for (int i = 0; i < np - 1; ++i) {
             adjPatchElementPointer[i + 1] += adjPatchElementPointer[i];
         }
 
@@ -66,32 +62,6 @@ namespace Eikonal {
         for (int i = 0; i < epart.size(); ++i) {
             patchAdjacentElementList[tempAdjPtr[epart[i]]] = i;
             tempAdjPtr[epart[i]]++;
-        }
-
-        // **********************************************************************************//
-
-        // *************** PATCH TO NODE ADJACENT LIST CREATION *********************************//
-        // Count elements for patch
-        adjPatchNodePointer.resize(npatch + 1);
-
-        for (const idx_t &pnum: npart) {
-            adjPatchNodePointer[pnum + 1]++;
-        }
-
-        // Create support vector for creation of patch-element adjacent list
-        std::vector<idx_t> tempAdjPtr2(adjPatchNodePointer.size());
-        std::copy(adjPatchNodePointer.begin(), adjPatchNodePointer.end(), tempAdjPtr2.data());
-
-        // Create patch-element adjacent pointers list
-        for (int i = 0; i < np; ++i) {
-            adjPatchNodePointer[i + 1] += adjPatchNodePointer[i];
-        }
-
-        // Create patch-element adjacent index list
-        patchAdjacentNodeList.resize(mesh.adjPointPtr.size() - 1);
-        for (int i = 0; i < npart.size(); ++i) {
-            patchAdjacentNodeList[tempAdjPtr2[npart[i]]] = i;
-            tempAdjPtr2[npart[i]]++;
         }
 
         // **********************************************************************************//
@@ -193,84 +163,14 @@ namespace Eikonal {
         std::vector<int> patchAdjPatchIdx;
         std::vector<int> adjPatchElePtr;
         std::vector<int> patchAdjEleIdx;
-        std::vector<int> adjPatchNodePtr;
-        std::vector<int> patchAdjNodeIdx;
         std::vector<int> XPatches;
 
-        int n_elements = data.adjElementPtr.size() - 1;
-        int n_nodes = data.points.size();
+        int nPatches = 5;
 
-        int patchSize = 1024;
-
-        int nPatches = 4;//(n_elements + patchSize) / patchSize;
-
-        partitionMesh<MESH_SIZE>(nPatches, data, X, adjPatchPatchPtr, patchAdjPatchIdx, adjPatchElePtr, patchAdjEleIdx, adjPatchNodePtr, patchAdjNodeIdx, XPatches);
-
-        U.resize(n_nodes);
-
-        std::fill(U.begin(), U.end(),MAXF);
-
-        for(const int &ptId : X){
-            U[ptId] = 0;
-        }
-
-        //Extract max adjElement for node
-        int maxRange = 0;
-        for(int i=0; i<data.adjPointPtr.size()-1; ++i){
-            int range = data.adjPointPtr[i+1] - data.adjPointPtr[i];
-            if (range > maxRange) maxRange = range;
-        }
-
-        //Initialize host MPrimeMatrices
-        std::vector<typename TTraits<MESH_SIZE>::MprimeMatrix> MPrimeMatrixPerPatch(n_elements);
+        partitionMesh<MESH_SIZE>(nPatches, data, X, adjPatchPatchPtr, patchAdjPatchIdx, adjPatchElePtr, patchAdjEleIdx, XPatches);
 
 
-        // ARRAY OF INDEXES FOR TIME_VALUES REDUCTION
-        std::vector<int> time_pointers_ids(n_elements * MESH_SIZE);
-
-        Traits::VelocityM M;
-        M << 1.0, 0.0, 0.0,
-                0.0, 1.0, 0.0,
-                0.0, 0.0, 1.0;
-
-        std::array<Traits::Point, MESH_SIZE> points;
-        std::vector<int> temp_counters(data.adjPointPtr.size() - 1);
-
-        int p = 0;
-
-        for(int j=0; j<n_elements; ++j){
-
-            int eleId = patchAdjEleIdx[j];
-            int pointRangeStart = data.adjElementPtr[eleId];
-            int pointRangeEnd = data.adjElementPtr[eleId + 1];
-
-            for(int k = pointRangeStart; k < pointRangeEnd; ++k){
-                int ptId = data.elementAdjacentPointList[k];
-                points[k-pointRangeStart] = data.points[ptId];
-
-
-                int count = temp_counters[ptId];
-                time_pointers_ids[p] = count + ptId * maxRange;
-                p++;
-                count++;
-                temp_counters[ptId] = count;
-            }
-
-            MPrimeMatrixPerPatch[j] = OptimizedLocalSolver<MESH_SIZE>(0,0,M,points).getMprimeMatrix();
-        }
-
-
-        bool result = false;
-
-        globalSolve<MESH_SIZE>(XPatches,
-                    adjPatchElePtr, patchAdjEleIdx,
-                    adjPatchNodePtr, patchAdjNodeIdx,
-                    data.adjElementPtr, data.elementAdjacentPointList,
-                    adjPatchPatchPtr, patchAdjPatchIdx,
-                    U, MPrimeMatrixPerPatch,
-                    time_pointers_ids, maxRange, &result);
-
-        return result;
+        return true;
     }
 
 

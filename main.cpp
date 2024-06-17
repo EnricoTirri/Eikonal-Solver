@@ -54,6 +54,8 @@ int main(int argc, char *argv[]) {
     std::vector<double> U;
     std::vector<int> X;
     timespec start{}, end{};
+    auto prepare =0.0;
+    auto compute = 0.0;
 
     if (meshdim == 4) // 3,4
     {
@@ -77,9 +79,9 @@ int main(int argc, char *argv[]) {
         std::cout << "LAUNCHING SOLVER ..." << std::endl;
         solver.print_spec();
 
-        clock_gettime(CLOCK_MONOTONIC, &start);
         success = solver.solve(U, X, mesh);
-        clock_gettime(CLOCK_MONOTONIC, &end);
+        prepare = solver.prepare;
+        compute = solver.compute;
 
         loader.dump(mesh, parser, U, elementData);
         U.clear();
@@ -105,18 +107,17 @@ int main(int argc, char *argv[]) {
         std::cout << "LAUNCHING SOLVER ..." << std::endl;
         solver.print_spec();
 
-        clock_gettime(CLOCK_MONOTONIC, &start);
+
         success = solver.solve(U, X, mesh);
-        clock_gettime(CLOCK_MONOTONIC, &end);
+        prepare = solver.prepare;
+        compute = solver.compute;
 
         loader.dump(mesh, parser, U, elementData);
         U.clear();
     }
 
     if (success) {
-        auto elapsed = static_cast<double>((end.tv_sec - start.tv_sec));
-        elapsed += static_cast<double>((end.tv_nsec - start.tv_nsec)) / 1000000000.0;
-        std::cout << "solver succeeded, time elapsed: " << elapsed << std::endl;
+        std::cout << "solver succeeded, prepare time: " << prepare/ 1000000000.0 << " compute time: " << compute/1000000000.0 << std::endl;
 
         parser.save(output_filename);
     } else {

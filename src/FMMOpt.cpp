@@ -8,6 +8,7 @@
 #include "EikonalHeapComparator.cpp"
 #include "OptimizedLocalSolver.hpp"
 
+#include <chrono>
 namespace Eikonal {
     template<int MESH_SIZE>
     void EikonalSolver<MESH_SIZE>::print_spec() {
@@ -18,7 +19,12 @@ namespace Eikonal {
     bool EikonalSolver<MESH_SIZE>::solve(std::vector<double> &U, const std::vector<int> &X,
                                          const Mesh<MESH_SIZE> &data) {
 
+
         using Point = typename Eikonal::Traits::Point;
+
+
+        //init start prepare time
+        auto start = std::chrono::high_resolution_clock::now();
 
         // Check if pointId belongs to mesh
         for (auto &pointId: X) {
@@ -57,13 +63,17 @@ namespace Eikonal {
             U[i] = 0;
             minHeap.push(i);
         }
+        auto end = std::chrono::high_resolution_clock::now();
 
+        this->prepare = std::chrono::duration_cast<std::chrono::nanoseconds>(end - start).count();
+        start = std::chrono::high_resolution_clock::now();
 #ifdef SOLVER_VERBOSE
         int iteration = 0;
 #endif
 
         std::vector<bool> L_set(data.points.size(), false);
         std::vector<bool> L_in(data.points.size(), false);
+
         while (!minHeap.empty()) {
 
 #ifdef SOLVER_VERBOSE
@@ -126,6 +136,8 @@ namespace Eikonal {
                 }
             }
         }
+        end = std::chrono::high_resolution_clock::now();
+        this->compute = std::chrono::duration_cast<std::chrono::nanoseconds>(end - start).count();
         return true;
     }
 }

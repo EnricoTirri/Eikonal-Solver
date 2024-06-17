@@ -8,6 +8,7 @@
 #include "EikonalHeapComparator.cpp"
 #include "LocalSolver.hpp"
 
+#include <chrono>
 namespace Eikonal {
 
     class PointElements {
@@ -29,6 +30,7 @@ namespace Eikonal {
                                          const Mesh<MESH_SIZE> &data) {
 
         typedef typename Traits::Point Point;
+        auto start = std::chrono::high_resolution_clock::now();
 
         // Check if pointId belongs to mesh
         for (auto &point: X) {
@@ -47,10 +49,11 @@ namespace Eikonal {
             minHeap.push(i);
         }
 
-        // Initialize progress info
-        int step_count = data.adjPointPtr.size() / 50;
-        int count = 0;
-        int step = 0;
+        auto end = std::chrono::high_resolution_clock::now();
+        this->prepare = std::chrono::duration_cast<std::chrono::nanoseconds>(end - start).count();
+        start = std::chrono::high_resolution_clock::now();
+
+
 
         std::vector<bool> L_set(data.points.size(), false);
         std::vector<bool> L_in(data.points.size(), false);
@@ -60,14 +63,7 @@ namespace Eikonal {
             L_set[minPointID] = true;
 
             // Update progress
-            ++count;
-            if (step_count == count - 1) {
-                count = 0;
-                step += 2;
-                std::cout << '\r';
-                std::cout << step << "% ";
-                std::cout.flush();
-            }
+
 
             std::vector<int> neighbors;
             int elRangeStart = data.adjPointPtr[minPointID];
@@ -155,7 +151,8 @@ namespace Eikonal {
 
         }
 
-        std::cout << std::endl;
+            end = std::chrono::high_resolution_clock::now();
+            this->compute = std::chrono::duration_cast<std::chrono::nanoseconds>(end - start).count();
         return true;
     }
 }

@@ -4,9 +4,11 @@
 #include "metis.h"
 #include "EikonalSolver.hpp"
 #include <iostream>
+#include <chrono>
 #include "GlobalSolverKernels.hpp"
 #include "OptimizedLocalSolver.hpp"
 
+#include <chrono>
 namespace Eikonal {
 
     template<int MESH_SIZE>
@@ -21,6 +23,8 @@ namespace Eikonal {
                   std::vector<int> &adjPatchElementPointer, std::vector<int> &patchAdjacentElementList,
                   std::vector<int> &adjPatchNodePointer, std::vector<int> &patchAdjacentNodeList,
                   std::vector<int> &startingPatches) {
+
+
 
         // ***************** METIS LIBRARY CALL *********************************************************//
         // Support variables for Metis lib
@@ -188,6 +192,7 @@ namespace Eikonal {
     inline bool EikonalSolver<MESH_SIZE>::solve(std::vector<double> &U,
                                                 const std::vector<int> &X,
                                                 const Mesh<MESH_SIZE> &data) {
+        auto start = std::chrono::high_resolution_clock::now();
 
         std::vector<int> adjPatchPatchPtr;
         std::vector<int> patchAdjPatchIdx;
@@ -240,6 +245,7 @@ namespace Eikonal {
 
         int p = 0;
 
+#pragma omp parallel for  schedule(dynamic)
         for(int j=0; j<n_elements; ++j){
 
             int eleId = patchAdjEleIdx[j];
@@ -260,10 +266,12 @@ namespace Eikonal {
 
             MPrimeMatrixPerPatch[j] = OptimizedLocalSolver<MESH_SIZE>(0,0,M,points).getMprimeMatrix();
         }
-
+        auto end = std::chrono::high_resolution_clock::now();
+        this->prepare = std::chrono::duration_cast<std::chrono::nanoseconds>(end - start).count();
 
         bool result = false;
 
+        start = std::chrono::high_resolution_clock::now();
         globalSolve<MESH_SIZE>(XPatches,
                     adjPatchElePtr, patchAdjEleIdx,
                     adjPatchNodePtr, patchAdjNodeIdx,
@@ -271,6 +279,9 @@ namespace Eikonal {
                     adjPatchPatchPtr, patchAdjPatchIdx,
                     U, MPrimeMatrixPerPatch,
                     time_pointers_ids, maxRange, &result);
+        end = std::chrono::high_resolution_clock::now();
+        this->compute = std::chrono::duration_cast<std::chrono::nanoseconds>(end - start).count();
+        
 
         return result;
     }

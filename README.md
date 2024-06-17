@@ -78,7 +78,7 @@ $ make
 * `-D EIGEN_PATH='/path/to/eigen3'` - specify eigen3 library path
 * `-D OMP_NUM_THREADS=_num_threads_` - specify the number of threads used by omp implementation
 * `-D VERBOSE=true/false` - specify if show vtk parser and mesh loader work-messages
-* `-D VERBOSE_SOLVER=true/false` - specify if show local solver work-messages
+* `-D SOLVER_VERBOSE=true/false` - specify if show local solver work-messages
 * `-D METHOD=_METHOD_TAG_` - specify the solver method that has to be compiled (default = FMM)
 * `-D EXE_NAME='_exe_filename_'` - specify the executable filename (default = eikonal_solver_'method_tag')
 

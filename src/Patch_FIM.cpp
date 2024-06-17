@@ -18,6 +18,7 @@ namespace Eikonal {
                   std::vector<int> &adjPatchPtr, std::vector<int> &patchAdjacentPatchList,
                   std::vector<int> &adjPatchElementPointer, std::vector<int> &patchAdjacentElementList,
                   std::vector<int> &startingPatches) {
+        auto start = std::chrono::high_resolution_clock::now();
 
         // ***************** METIS LIBRARY CALL *********************************************************//
         // Support variables for Metis lib
@@ -78,7 +79,9 @@ namespace Eikonal {
 
         // support vector for count patch-belonging nodes
         std::vector<int> counter(npatch);
-
+        auto end = std::chrono::high_resolution_clock::now();
+        prepare = std::chrono::duration_cast<std::chrono::nanoseconds>(end - start).count();
+        start = std::chrono::high_resolution_clock::now();
         // iterate over all elements
         for (int eleId = 0; eleId < mesh.adjElementPtr.size() - 1; ++eleId) {
             int pStart = mesh.adjElementPtr[eleId];
@@ -168,7 +171,6 @@ namespace Eikonal {
         int nPatches = 5;
 
         partitionMesh<MESH_SIZE>(nPatches, data, X, adjPatchPatchPtr, patchAdjPatchIdx, adjPatchElePtr, patchAdjEleIdx, XPatches);
-
 
         return true;
     }

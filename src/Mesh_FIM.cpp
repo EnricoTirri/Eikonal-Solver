@@ -7,6 +7,7 @@
 #include "EikonalHeapComparator.cpp"
 #include "LocalSolver.hpp"
 
+#include <chrono>
 namespace Eikonal {
     using Point = typename Eikonal::Traits::Point;
 
@@ -24,6 +25,9 @@ namespace Eikonal {
     bool EikonalSolver<MESH_SIZE>::solve(std::vector<double> &U, const std::vector<int> &X,
                                          const Mesh<MESH_SIZE> &data) {
 
+
+
+        auto start = std::chrono::high_resolution_clock::now();
         for (auto &point: X) {
             if (point >= data.points.size()) {
                 printf("error on initial point id: %d does not belong to mesh\n", point);
@@ -34,7 +38,12 @@ namespace Eikonal {
         U.resize(data.points.size());
         std::fill(U.begin(), U.end(), MAXF);
 
+        auto end = std::chrono::high_resolution_clock::now();
+       this->prepare = std::chrono::duration_cast<std::chrono::nanoseconds>(end - start).count();
+        start = std::chrono::high_resolution_clock::now();
+
         std::vector<int> active;
+
 
         for (int pntID: X) {
             U[pntID] = 0;
@@ -191,6 +200,8 @@ namespace Eikonal {
             }
         }
 
+            end = std::chrono::high_resolution_clock::now();
+       this->compute = std::chrono::duration_cast<std::chrono::nanoseconds>(end - start).count();
         return true;
     }
 

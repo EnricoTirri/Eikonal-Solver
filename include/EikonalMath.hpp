@@ -3,7 +3,9 @@
 #define EIKONAL_MATH
 
 #include <cmath>
+#ifdef __AVX2__
 #include "immintrin.h"
+#endif
 namespace Eikonal {
 
     class SideFunction {
@@ -18,7 +20,7 @@ namespace Eikonal {
         }
     };
 
-
+#ifdef __AVX2__
     inline int sameSign(double a, double b) {
         // Load the double 'a' and 'b' into 128-bit vectors
         __m128d va = _mm_set_sd(a);
@@ -34,6 +36,11 @@ namespace Eikonal {
         // _mm_movemask_pd extract two sign bits, because it operates on packed doubles, we only need one bit
         return sign & 1;
     }
+#else
+    inline int sameSign(double a, double b) {
+        return std::signbit(a) == std::signbit(b);
+    }
+#endif
 
 
 

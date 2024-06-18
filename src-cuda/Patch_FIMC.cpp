@@ -245,7 +245,6 @@ namespace Eikonal {
 
         int p = 0;
 
-#pragma omp parallel for  schedule(dynamic)
         for(int j=0; j<n_elements; ++j){
 
             int eleId = patchAdjEleIdx[j];

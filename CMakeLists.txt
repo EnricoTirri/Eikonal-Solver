@@ -118,7 +118,8 @@ if(USECUDA)
         set(CUDA_BLOCK_SIZE 128)
     endif ()
     add_compile_definitions(BLOCK_SIZE=${CUDA_BLOCK_SIZE})
-
+    #nvcc flags
+    set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} -arch=sm_75 -Xcompiler -fopenmp -lcudart  -Xcompiler -O3")
     file(GLOB CUDA_SOURCES "src-cuda/*.c*")
     add_executable(eikonal_solver_PFIMC main.cpp ${SOURCES} ${CUDA_SOURCES})
     target_compile_definitions(eikonal_solver_PFIMC PRIVATE PFIMC)

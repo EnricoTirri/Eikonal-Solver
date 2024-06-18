@@ -1,6 +1,9 @@
 #include "GlobalSolverKernels.hpp"
 #include "LocalSolverKernels.hpp"
 #include "iostream"
+#include <thrust/device_ptr.h>
+#include <thrust/scan.h>
+#include <thrust/execution_policy.h>
 
 namespace Eikonal {
 
@@ -369,6 +372,62 @@ namespace Eikonal {
     }
 
 
+    __global__ void
+    writeActiveIndices(const int *convergedPatchListNew, const int *scannedList, int *activePatchList, int patches) {
+        int idx = blockIdx.x * blockDim.x + threadIdx.x;
+        if (idx < patches && convergedPatchListNew[idx] > 0) {
+            activePatchList[scannedList[idx]] = idx;
+        }
+    }
+
+#define checkCudaError(err) {\
+    if (err != cudaSuccess) {\
+        std::cerr << "CUDA Error: " << cudaGetErrorString(err) << std::endl;\
+        exit(EXIT_FAILURE);\
+    }\
+}
+
+    int reduceActiveList(const int *d_convergedPatchListNew, int *d_activePatchList, int *d_activePatchListSize,
+                         int patches) {
+        // Allocate device memory for the scanned list
+        int *d_scannedList;
+        checkCudaError(cudaMalloc(&d_scannedList, patches * sizeof(int)));
+
+        // Use Thrust device pointers for Thrust operations
+        thrust::device_ptr<const int> d_convergedPatchListNew_ptr(d_convergedPatchListNew);
+        thrust::device_ptr<int> d_scannedList_ptr(d_scannedList);
+        // Perform an exclusive scan on the convergedPatchListNew array directly
+        thrust::exclusive_scan(d_convergedPatchListNew_ptr, d_convergedPatchListNew_ptr + patches, d_scannedList_ptr);
+
+
+        int *scannedList = (int *) malloc(1 * sizeof(int));
+        thrust::copy(d_scannedList_ptr + patches - 1, d_scannedList_ptr + patches, scannedList);
+
+        int activeListSize = scannedList[0];
+        //print scanned list for debugging
+        int *d_convergedPatchListNew_last = (int *) malloc(1 * sizeof(int));
+        thrust::copy(d_convergedPatchListNew_ptr + patches - 1, d_convergedPatchListNew_ptr + patches,
+                     d_convergedPatchListNew_last);
+
+        activeListSize += (d_convergedPatchListNew_last[0] > 0 ? 1 : 0);
+
+
+        checkCudaError(cudaMemcpy(d_activePatchListSize, &activeListSize, sizeof(int), cudaMemcpyHostToDevice));
+
+        // Launch kernel to write active indices
+        int threadsPerBlock = 256;
+        int blocksPerGrid = (patches + threadsPerBlock - 1) / threadsPerBlock;
+
+
+        writeActiveIndices<<<blocksPerGrid, threadsPerBlock>>>(d_convergedPatchListNew, d_scannedList,
+                                                               d_activePatchList, patches);
+
+        checkCudaError(cudaFree(d_scannedList));
+        return activeListSize;
+    }
+
+#undef checkCudaError
+
     template<>
     void globalSolve<3>(const std::vector<int> &XPatches,
                         const std::vector<int> &patchElementPtr, const std::vector<int> &patchAdjElementIdx,
@@ -501,27 +560,22 @@ namespace Eikonal {
             // ACTIVATE NEIGHBOURS OF CONVERGED PATCHES (MIXED)
             {
                 cudaMemset(converged_patch_list_new_dev, 0, sizeof(int) * n_patches);
-                activateNeighbours<<<n_blocks, block_size>>>(patchPatchPtr_dev, patchAdjPatchIdx_dev, converged_patch_list_dev, converged_patch_list_new_dev, n_patches);
-                cudaMemcpy(convergedPatchList_new.data(), converged_patch_list_new_dev, sizeof(int) * n_patches, cudaMemcpyDeviceToHost);
 
-                int k = 0;
-                for (int i = 0; i < convergedPatchList_new.size(); ++i)
-                    if (convergedPatchList_new[i] > 0) {
-                        activePatchList[k] = i;
-                        k++;
-                    }
 
-                activeListSize = k;
+                activateNeighbours<<<n_blocks, block_size>>>(patchPatchPtr_dev, patchAdjPatchIdx_dev,
+                                                             converged_patch_list_dev, converged_patch_list_new_dev,
+                                                             n_patches);
 
-                cudaMemcpy(activePatchList_dev, activePatchList.data(), sizeof(int) * activeListSize,
-                           cudaMemcpyHostToDevice);
+
+                activeListSize = reduceActiveList(converged_patch_list_new_dev, activePatchList_dev,
+                                                  activePatchListSize_dev, n_patches);
+
                 //checkError("D");
-                cudaMemcpy(activePatchListSize_dev, &activeListSize, sizeof(int), cudaMemcpyHostToDevice);
                 //checkError("E");
             }
 
 
-            if(activeListSize==0) break;
+            if (activeListSize == 0) break;
 
             //DO ONE ITERATION ON NEIGHBOURS
             {
@@ -540,23 +594,14 @@ namespace Eikonal {
 
             //RETRIEVE ACTIVE LIST (CPU)
             {
-                cudaMemcpy(convergedPatchList.data(), converged_patch_list_dev, sizeof(int) * n_patches,
-                           cudaMemcpyDeviceToHost);
+
                 //checkError("H");
 
-                int k = 0;
-                for (int i = 0; i < convergedPatchList_new.size(); ++i)
-                    if (convergedPatchList_new[i] > 0) {
-                        activePatchList[k] = i;
-                        k++;
-                    }
 
-                activeListSize = k;
+                activeListSize = reduceActiveList(converged_patch_list_dev, activePatchList_dev,
+                                                  activePatchListSize_dev, n_patches);
 
-                cudaMemcpy(activePatchList_dev, activePatchList.data(), sizeof(int) * n_patches,
-                           cudaMemcpyHostToDevice);
                 //checkError("I");
-                cudaMemcpy(activePatchListSize_dev, &activeListSize, sizeof(int), cudaMemcpyHostToDevice);
                 //checkError("L");
             }
 
@@ -592,6 +637,7 @@ namespace Eikonal {
 
         (*result) = true;
     }
+
 
     template<>
     void globalSolve<4>(const std::vector<int> &XPatches,
@@ -723,31 +769,19 @@ namespace Eikonal {
             {
                 cudaMemset(converged_patch_list_new_dev, 0, sizeof(int) * n_patches);
                 //checkError("O");
-                activateNeighbours<<<n_blocks, block_size>>>(patchPatchPtr_dev, patchAdjPatchIdx_dev, converged_patch_list_dev, converged_patch_list_new_dev, n_patches);
+                activateNeighbours<<<n_blocks, block_size>>>(patchPatchPtr_dev, patchAdjPatchIdx_dev,
+                                                             converged_patch_list_dev, converged_patch_list_new_dev,
+                                                             n_patches);
                 //checkError("ACT");
-                cudaMemcpy(convergedPatchList_new.data(), converged_patch_list_new_dev, sizeof(int) * n_patches, cudaMemcpyDeviceToHost);
                 //checkError("BIG");
+                activeListSize = reduceActiveList(converged_patch_list_new_dev, activePatchList_dev,
+                                                  activePatchListSize_dev, n_patches);
 
-                int k = 0;
-                for (int i = 0; i < convergedPatchList_new.size(); ++i)
-                    if (convergedPatchList_new[i] > 0) {
-                        activePatchList[k] = i;
-                        k++;
-                    }
-
-                activeListSize = k;
-
-                //std::cout << k << std::endl;
-
-                cudaMemcpy(activePatchList_dev, activePatchList.data(), sizeof(int) * activeListSize,
-                           cudaMemcpyHostToDevice);
-                //checkError("D");
-                cudaMemcpy(activePatchListSize_dev, &activeListSize, sizeof(int), cudaMemcpyHostToDevice);
                 //checkError("E");
             }
 
 
-            if(activeListSize==0) break;
+            if (activeListSize == 0) break;
 
             //DO ONE ITERATION ON NEIGHBOURS
             {
@@ -766,23 +800,11 @@ namespace Eikonal {
 
             //RETRIEVE ACTIVE LIST (CPU)
             {
-                cudaMemcpy(convergedPatchList.data(), converged_patch_list_dev, sizeof(int) * n_patches,
-                           cudaMemcpyDeviceToHost);
+                /* */
                 //checkError("H");
-
-                int k = 0;
-                for (int i = 0; i < convergedPatchList_new.size(); ++i)
-                    if (convergedPatchList_new[i] > 0) {
-                        activePatchList[k] = i;
-                        k++;
-                    }
-
-                activeListSize = k;
-
-                cudaMemcpy(activePatchList_dev, activePatchList.data(), sizeof(int) * n_patches,
-                           cudaMemcpyHostToDevice);
+                activeListSize = reduceActiveList(converged_patch_list_dev, activePatchList_dev,
+                                                  activePatchListSize_dev, n_patches);
                 //checkError("I");
-                cudaMemcpy(activePatchListSize_dev, &activeListSize, sizeof(int), cudaMemcpyHostToDevice);
                 //checkError("L");
             }
 
@@ -812,4 +834,6 @@ namespace Eikonal {
 
         (*result) = true;
     }
+
+
 }

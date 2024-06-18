@@ -7,7 +7,7 @@
 #include "EikonalHeapComparator.cpp"
 #include "LocalSolver.hpp"
 #include <cmath>
-
+#include <chrono>
 namespace Eikonal {
     using Point = Eikonal::Traits::Point;
 
@@ -138,6 +138,8 @@ namespace Eikonal {
     bool EikonalSolver<MESH_SIZE>::solve(std::vector<double> &U, const std::vector<int> &X,
                                          const Mesh<MESH_SIZE> &data) {
 
+
+        auto start = std::chrono::high_resolution_clock::now();
         // Check if all points belong to mesh
         for (auto &point: X) {
             if (point >= data.points.size()) {
@@ -155,6 +157,9 @@ namespace Eikonal {
         active.resize(data.points.size());
         converged.resize(data.points.size());
 
+        auto end = std::chrono::high_resolution_clock::now();
+        this->prepare = std::chrono::duration_cast<std::chrono::nanoseconds>(end - start).count();
+        start = std::chrono::high_resolution_clock::now();
 #pragma omp parallel
         {
         initialize<MESH_SIZE>(U, X, data, active, MAXF);
@@ -269,7 +274,8 @@ namespace Eikonal {
 
             }
         }
-
+        end = std::chrono::high_resolution_clock::now();
+        this->compute = std::chrono::duration_cast<std::chrono::nanoseconds>(end - start).count();
         return true;
     }
 

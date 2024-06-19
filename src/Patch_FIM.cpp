@@ -1,7 +1,6 @@
 
 #if PFIM
 
-
 #include "metis.h"
 #include "EikonalSolver.hpp"
 #include <iostream>
@@ -11,10 +10,12 @@
 #include "OptimizedLocalSolver.hpp"
 #include <chrono>
 
-namespace Eikonal {
+namespace Eikonal
+{
 
-    template<int MESH_SIZE>
-    void EikonalSolver<MESH_SIZE>::print_spec() {
+    template <int MESH_SIZE>
+    void EikonalSolver<MESH_SIZE>::print_spec()
+    {
         std::cout << "Patch Fast Iterative Method" << std::endl;
     }
 
@@ -23,7 +24,7 @@ namespace Eikonal {
     partitionMesh(const int &npatch, const Mesh<MESH_SIZE> &mesh, const std::vector<int> &startingPoint,
                   std::vector<int> &adjPatchPtr, std::vector<int> &patchAdjacentPatchList,
                   std::vector<int> &adjPatchElementPointer, std::vector<int> &patchAdjacentElementList,
-                  std::vector<int> &adjPatchNodePointer, std::vector<int> &patchAdjacentNodeList,
+                //   std::vector<int> &adjPatchNodePointer, std::vector<int> &patchAdjacentNodeList,
                   std::vector<int> &startingPatches)
     {
 
@@ -46,7 +47,7 @@ namespace Eikonal {
 
         // Call metis lib
         METIS_PartMeshNodal(&ne, &nn, eptr.data(), eidx.data(), nullptr, nullptr, &np, nullptr, nullptr, &objval, epart.data(), npart.data());
-
+        
         // ********************************************************************************************** //
 
         // *************** PATCH TO ELEMENT ADJACENT LIST CREATION *********************************//
@@ -78,32 +79,32 @@ namespace Eikonal {
 
         // **********************************************************************************//
 
-        // *************** PATCH TO NODE ADJACENT LIST CREATION *********************************//
-        // Count elements for patch
-        adjPatchNodePointer.resize(npatch + 1);
+        // // *************** PATCH TO NODE ADJACENT LIST CREATION *********************************//
+        // // Count elements for patch
+        // adjPatchNodePointer.resize(npatch + 1);
 
-        for (const idx_t &pnum : npart)
-        {
-            adjPatchNodePointer[pnum + 1]++;
-        }
+        // for (const idx_t &pnum : npart)
+        // {
+        //     adjPatchNodePointer[pnum + 1]++;
+        // }
 
-        // Create patch-element adjacent pointers list
-        for (int i = 0; i < np; ++i)
-        {
-            adjPatchNodePointer[i + 1] += adjPatchNodePointer[i];
-        }
+        // // Create patch-element adjacent pointers list
+        // for (int i = 0; i < np; ++i)
+        // {
+        //     adjPatchNodePointer[i + 1] += adjPatchNodePointer[i];
+        // }
 
-        // Create support vector for creation of patch-element adjacent list
-        std::vector<idx_t> tempAdjPtr2(adjPatchNodePointer.size());
-        std::copy(adjPatchNodePointer.begin(), adjPatchNodePointer.end(), tempAdjPtr2.data());
+        // // Create support vector for creation of patch-element adjacent list
+        // std::vector<idx_t> tempAdjPtr2(adjPatchNodePointer.size());
+        // std::copy(adjPatchNodePointer.begin(), adjPatchNodePointer.end(), tempAdjPtr2.data());
 
-        // Create patch-element adjacent index list
-        patchAdjacentNodeList.resize(mesh.adjPointPtr.size() - 1);
-        for (int i = 0; i < npart.size(); ++i)
-        {
-            patchAdjacentNodeList[tempAdjPtr2[npart[i]]] = i;
-            tempAdjPtr2[npart[i]]++;
-        }
+        // // Create patch-element adjacent index list
+        // patchAdjacentNodeList.resize(mesh.adjPointPtr.size() - 1);
+        // for (int i = 0; i < npart.size(); ++i)
+        // {
+        //     patchAdjacentNodeList[tempAdjPtr2[npart[i]]] = i;
+        //     tempAdjPtr2[npart[i]]++;
+        // }
 
         // **********************************************************************************//
 
@@ -207,8 +208,8 @@ namespace Eikonal {
 
     template <int MESH_SIZE>
     bool EikonalSolver<MESH_SIZE>::solve(std::vector<double> &U,
-                                                const std::vector<int> &X,
-                                                const Mesh<MESH_SIZE> &data)
+                                         const std::vector<int> &X,
+                                         const Mesh<MESH_SIZE> &data)
     {
         auto start = std::chrono::high_resolution_clock::now();
 
@@ -222,13 +223,19 @@ namespace Eikonal {
         // adjPatch adjPatchPatchPtr pointer=data patch numero  0 mi da il punto iniziale in cui parte la lista di patch a lui adiacenti
         // mi da l'id che va usato su patchAdjPatchIdx
         // adjPatchElePtr data una patch mi da gli elementi che contiene come adjpatchpatchptr dandomi l'idx a patchadjeleidx
-
-        const int iterazioni = 7;
-        const int nPatches = 4;
+        // const int nPatches=data.adjElementPtr.size()/67;
+        int nPatches;
+        if (data.adjElementPtr.size() / 67 > 32)
+            nPatches = 100;
+        else
+            nPatches = data.adjElementPtr.size() / 67;
+        if (nPatches == 1)
+            nPatches = 2;
+        const int iterazioni=7;
         // data
         timespec start1{}, end1{};
-        partitionMesh<MESH_SIZE>(nPatches, data, X, adjPatchPatchPtr, patchAdjPatchIdx, adjPatchElePtr, patchAdjEleIdx, adjPatchNodePtr, patchAdjNodeIdx, XPatches);
-
+        partitionMesh<MESH_SIZE>(nPatches, data, X, adjPatchPatchPtr, patchAdjPatchIdx, adjPatchElePtr, patchAdjEleIdx, /*adjPatchNodePtr, patchAdjNodeIdx,*/ XPatches);
+        std::cout<<patchAdjEleIdx.size()<<std::endl;
         // std::cout<<"partitioning: "<<elapsed<<std::endl;
         std::vector<bool> convergence(nPatches, false);
 
@@ -271,7 +278,7 @@ namespace Eikonal {
             for (int j = 0; j < MESH_SIZE; ++j)
             {
                 points[j] = data.points[data.elementAdjacentPointList[j + ptrStart]];
-            }
+            } 
             solvers.push_back(OptimizedLocalSolver<MESH_SIZE>{1, 10e-6, M, points});
         }
 
@@ -285,196 +292,220 @@ namespace Eikonal {
         auto end = std::chrono::high_resolution_clock::now();
         this->prepare = std::chrono::duration_cast<std::chrono::nanoseconds>(end - start).count();
         start = std::chrono::high_resolution_clock::now();
-
-        // std::vector<double> Unew(U.size());
-        // std::copy(U.begin(), U.end(), Unew.begin());
-        while (!isActivePatchListEmpty)
+//        int iterazioni = patchAdjEleIdx.size()/(nPatches*10);
+// std::vector<double> Unew(U.size());
+// std::copy(U.begin(), U.end(), Unew.begin());
+#pragma omp parallel default(shared)
         {
+            while (!isActivePatchListEmpty)
+            {
+#pragma omp single
+{
             convergence.assign(convergence.size(), false);
-            // Main update
-            // Per ogni patch attiva
-#pragma omp parallel for 
-            for (int activePatch = 0; activePatch < nPatches; activePatch++)
-            {
-
-                if (!activePatchesList[activePatch])
-                    continue;
-
-                // per il numero di iterazioni che gli chiedo, viva il 7
-                for (int iterations = 0; iterations < 7; iterations++)
+}
+// #pragma omp for
+//                 for (int i = 0; i < convergence.size(); i++)
+//                 {
+//                     convergence[i] = false;
+//                 }
+                // Main update
+                // Per ogni patch attiva
+#pragma omp for
+                for (int activePatch = 0; activePatch < nPatches; activePatch++)
                 {
-                    // per ogni triangolo appartenente alla patch
-                    // da vedere bene tutto
-                    for (int activeTriangleIdx = 0; activeTriangleIdx < adjPatchElePtr[activePatch + 1] - adjPatchElePtr[activePatch]; activeTriangleIdx++)
 
+                    if (!activePatchesList[activePatch])
+                        continue;
+
+                    // per il numero di iterazioni che gli chiedo, viva il 7
+                    for (int iterations = 0; iterations < iterazioni; iterations++)
                     {
+                        // per ogni triangolo appartenente alla patch
+                        // da vedere bene tutto
+                        for (int activeTriangleIdx = 0; activeTriangleIdx < adjPatchElePtr[activePatch + 1] - adjPatchElePtr[activePatch]; activeTriangleIdx++) // try to parall this
 
-                        int eleId = patchAdjEleIdx[activeTriangleIdx + adjPatchElePtr[activePatch]];
-
-                        int pointRangeStart = data.adjElementPtr[eleId];
-                        int pointRangeEnd = data.adjElementPtr[eleId + 1];
-
-                        OptimizedLocalSolver<MESH_SIZE> solver = solvers[eleId];
-
-                        // Otherwise solve local problem with this point as unknown and the others as base
-                        std::array<double, MESH_SIZE> values;
-                        for (std::size_t j = 0; j < MESH_SIZE; j++)
                         {
-                            int tpId = data.elementAdjacentPointList[pointRangeStart + j];
-                            values[j] = U[tpId];
+
+                            int eleId = patchAdjEleIdx[activeTriangleIdx + adjPatchElePtr[activePatch]];
+
+                            int pointRangeStart = data.adjElementPtr[eleId];
+                            int pointRangeEnd = data.adjElementPtr[eleId + 1];
+
+                            OptimizedLocalSolver<MESH_SIZE> solver = solvers[eleId];
+
+                            // Otherwise solve local problem with this point as unknown and the others as base
+                            std::array<double, MESH_SIZE> values;
+                            for (std::size_t j = 0; j < MESH_SIZE; j++)
+                            {
+                                int tpId = data.elementAdjacentPointList[pointRangeStart + j];
+                                values[j] = U[tpId];
+                            }
+
+                            for (int pi = pointRangeStart; pi < pointRangeEnd; ++pi)
+                            {
+                                int pointID = data.elementAdjacentPointList[pi];
+
+                                // If point of the element has been already explored then continue
+                                // if (L_set[pointID])
+                                //     continue;
+
+                                int k = pi - pointRangeStart;
+
+                                double sol = solver(k, values);
+                                // if(found)
+                                //                             std::cout << sol << std::endl;
+                                // If solution does not improve then skip
+                                //                            if (sol >= Unew[pointID])
+                                if (sol >= U[pointID])
+                                    continue;
+
+                                values[k] = sol;
+                                // std::cout << "pppp" << std::endl;
+                                // Otherwise update solution
+                                //                            Unew[pointID] = sol;
+#pragma omp atomic write
+                                U[pointID] = sol;
+
+                                convergence[activePatch] = 1;
+                            }
+                            //                        if(found) return true;
                         }
-
-                        for (int pi = pointRangeStart; pi < pointRangeEnd; ++pi)
-                        {
-                            int pointID = data.elementAdjacentPointList[pi];
-
-                            // If point of the element has been already explored then continue
-                            // if (L_set[pointID])
-                            //     continue;
-
-                            int k = pi - pointRangeStart;
-
-                            double sol = solver(k, values);
-                            // if(found)
-                            //                             std::cout << sol << std::endl;
-                            // If solution does not improve then skip
-                            //                            if (sol >= Unew[pointID])
-                            if (sol >= U[pointID])
-                                continue;
-
-                            values[k] = sol;
-                            // std::cout << "pppp" << std::endl;
-                            // Otherwise update solution
-                            //                            Unew[pointID] = sol;
-                            U[pointID] = sol;
-                            convergence[activePatch] = 1;
-                        }
-                        //                        if(found) return true;
-                    }
-                    //                    std::swap(U, Unew);???
-                }
-            }
-            //            U.assign(Unew.begin(), Unew.end());
-            // Check Neighbors
-            // Se rendo parallele solo le patch e non i triangoli non mi serve
-            // // if something in patch didnt converge don't sign as converged the C(p)
-            // for (int activePatch = 0; activePatch < nPatches; activePatch++)
-            // {
-            //     if (!activePatchesList[activePatch])
-            //         continue;
-            //     // Per ogni vertex in patch check convergence status
-            //     // reduction check
-            //     for (std::size_t iterat = 0; iterat < convergencePoints[activePatch].size(); iterat++)
-            //     {
-            //         if (convergencePoints[activePatch][iterat])
-            //         {
-            //             convergence[activePatch] = true;
-            //             break;
-            //         }
-            //     }
-            // }
-
-            // Seconda parte
-            // array di lunghezza nPatch di booleani
-            for (int activePatch = 0; activePatch < nPatches; activePatch++)
-            {
-                if (!activePatchesList[activePatch])
-                    continue;
-                if (convergence[activePatch])
-                {
-                    for (int adjPatchdix = 0; adjPatchdix < adjPatchPatchPtr[activePatch + 1] - adjPatchPatchPtr[activePatch]; adjPatchdix++)
-                    {
-                        activePatchesList[patchAdjPatchIdx[adjPatchPatchPtr[activePatch] + adjPatchdix]] = true;
+                        //                    std::swap(U, Unew);???
                     }
                 }
-            }
+                //            U.assign(Unew.begin(), Unew.end());
+                // Check Neighbors
+                // Se rendo parallele solo le patch e non i triangoli non mi serve
+                // // if something in patch didnt converge don't sign as converged the C(p)
+                // for (int activePatch = 0; activePatch < nPatches; activePatch++)
+                // {
+                //     if (!activePatchesList[activePatch])
+                //         continue;
+                //     // Per ogni vertex in patch check convergence status
+                //     // reduction check
+                //     for (std::size_t iterat = 0; iterat < convergencePoints[activePatch].size(); iterat++)
+                //     {
+                //         if (convergencePoints[activePatch][iterat])
+                //         {
+                //             convergence[activePatch] = true;
+                //             break;
+                //         }
+                //     }
+                // }
 
-            // Terza parte
-            //  Per ogni patch attiva
-#pragma omp parallel for 
-            for (int activePatch = 0; activePatch < nPatches; activePatch++)
-            {
-                if (!activePatchesList[activePatch])
-                    continue;
-
-                // per il numero di iterazioni che gli chiedo, viva il 7
-                for (int iterations = 0; iterations < 1; iterations++)
+                // Seconda parte
+                // array di lunghezza nPatch di booleani
+#pragma omp for
+                for (int activePatch = 0; activePatch < nPatches; activePatch++)
                 {
-                    // per ogni triangolo appartenente alla patch
-                    // da vedere bene tutto
-                    for (int activeTriangleIdx = 0; activeTriangleIdx < adjPatchElePtr[activePatch + 1] - adjPatchElePtr[activePatch]; activeTriangleIdx++)
+                    if (!activePatchesList[activePatch])
+                        continue;
+                    if (convergence[activePatch])
                     {
-                        int eleId = patchAdjEleIdx[activeTriangleIdx + adjPatchElePtr[activePatch]];
-                        int pointRangeStart = data.adjElementPtr[eleId];
-                        int pointRangeEnd = data.adjElementPtr[eleId + 1];
-
-                        OptimizedLocalSolver<MESH_SIZE> solver = solvers[eleId];
-
-                        // Otherwise solve local problem with this point as unknown and the others as base
-                        std::array<double, MESH_SIZE> values;
-                        for (std::size_t j = 0; j < MESH_SIZE; j++)
+                        for (int adjPatchdix = 0; adjPatchdix < adjPatchPatchPtr[activePatch + 1] - adjPatchPatchPtr[activePatch]; adjPatchdix++)
                         {
-                            int tpId = data.elementAdjacentPointList[pointRangeStart + j];
-                            values[j] = U[tpId];
-                        }
-
-                        for (int pi = pointRangeStart; pi < pointRangeEnd; ++pi)
-                        {
-                            int pointID = data.elementAdjacentPointList[pi];
-
-                            // If point of the element has been already explored then continue
-                            // if (L_set[pointID])
-                            //     continue;
-
-                            int k = pi - pointRangeStart;
-
-                            double sol = solver(k, values);
-
-                            // If solution does not improve then skip
-                            if (sol >= U[pointID])
-                                continue;
-                            values[k] = sol;
-                            // Otherwise update solution
-                            //                            Unew[pointID] = sol;
-                            U[pointID] = sol;
-                            convergence[activePatch] = 1;
+                            activePatchesList[patchAdjPatchIdx[adjPatchPatchPtr[activePatch] + adjPatchdix]] = true;
                         }
                     }
-                    //                    std::swap(U, Unew); ???
                 }
-            }
-            //            U.assign(Unew.begin(), Unew.end());
-            // Come prima
-            // // if something in patch didnt converge don't sign as converged the C(p)
-            // for (int activePatch = 0; activePatch < nPatches; activePatch++)
-            // {
-            //     if (!activePatchesList[activePatch])
-            //         continue;
-            //     // Per ogni vertex in patch check convergence status
-            //     // reduction check
-            //     for (std::size_t iterat = 0; iterat < convergencePoints[activePatch].size() && convergence[activePatch] == false; iterat++)
-            //     {
-            //         if (convergencePoints[activePatch][iterat])
-            //         {
-            //             convergence[activePatch] = true;
-            //             continue;
-            //         }
-            //     }
-            // }
 
-            // Update Active List
-            for (int i = 0; i < activePatchesList.size(); i++)
-            {
-                activePatchesList[i] = false;
-            }
-            isActivePatchListEmpty = true;
-
-            for (int i = 0; i < nPatches; i++)
-            {
-                if (convergence[i])
+                // Terza parte
+                //  Per ogni patch attiva
+#pragma omp for
+                for (int activePatch = 0; activePatch < nPatches; activePatch++)
                 {
-                    activePatchesList[i] = true;
-                    isActivePatchListEmpty = false;
+                    if (!activePatchesList[activePatch])
+                        continue;
+
+                    // per il numero di iterazioni che gli chiedo, viva il 7
+                    for (int iterations = 0; iterations < 1; iterations++)
+                    {
+                        // per ogni triangolo appartenente alla patch
+                        // da vedere bene tutto
+                        for (int activeTriangleIdx = 0; activeTriangleIdx < adjPatchElePtr[activePatch + 1] - adjPatchElePtr[activePatch]; activeTriangleIdx++)
+                        {
+                            int eleId = patchAdjEleIdx[activeTriangleIdx + adjPatchElePtr[activePatch]];
+                            int pointRangeStart = data.adjElementPtr[eleId];
+                            int pointRangeEnd = data.adjElementPtr[eleId + 1];
+
+                            OptimizedLocalSolver<MESH_SIZE> solver = solvers[eleId];
+
+                            // Otherwise solve local problem with this point as unknown and the others as base
+                            std::array<double, MESH_SIZE> values;
+                            for (std::size_t j = 0; j < MESH_SIZE; j++)
+                            {
+                                int tpId = data.elementAdjacentPointList[pointRangeStart + j];
+                                values[j] = U[tpId];
+                            }
+
+                            for (int pi = pointRangeStart; pi < pointRangeEnd; ++pi)
+                            {
+                                int pointID = data.elementAdjacentPointList[pi];
+
+                                // If point of the element has been already explored then continue
+                                // if (L_set[pointID])
+                                //     continue;
+
+                                int k = pi - pointRangeStart;
+
+                                double sol = solver(k, values);
+
+                                // If solution does not improve then skip
+                                if (sol >= U[pointID])
+                                    continue;
+                                values[k] = sol;
+                                // Otherwise update solution
+                                //                            Unew[pointID] = sol;
+#pragma omp atomic write
+                                U[pointID] = sol;
+                                convergence[activePatch] = 1;
+                            }
+                        }
+                        //                    std::swap(U, Unew); ???
+                    }
+                }
+                //            U.assign(Unew.begin(), Unew.end());
+                // Come prima
+                // // if something in patch didnt converge don't sign as converged the C(p)
+                // for (int activePatch = 0; activePatch < nPatches; activePatch++)
+                // {
+                //     if (!activePatchesList[activePatch])
+                //         continue;
+                //     // Per ogni vertex in patch check convergence status
+                //     // reduction check
+                //     for (std::size_t iterat = 0; iterat < convergencePoints[activePatch].size() && convergence[activePatch] == false; iterat++)
+                //     {
+                //         if (convergencePoints[activePatch][iterat])
+                //         {
+                //             convergence[activePatch] = true;
+                //             continue;
+                //         }
+                //     }
+                // }
+
+                // Update Active List
+// #pragma omp for
+//                 for (int i = 0; i < activePatchesList.size(); i++)
+//                 {
+//                     activePatchesList[i] = false;
+//                 }
+#pragma omp single
+                {
+                    activePatchesList.assign(activePatchesList.size(), false);
+                }
+                
+#pragma omp single
+                {
+                    isActivePatchListEmpty = true;
+                }
+#pragma omp for
+                for (int i = 0; i < nPatches; i++)
+                {
+                    if (convergence[i])
+                    {
+                        activePatchesList[i] = true;
+                        isActivePatchListEmpty = false;
+                    }
                 }
             }
         }
@@ -485,6 +516,5 @@ namespace Eikonal {
         return true;
     }
 }
-
 
 #endif

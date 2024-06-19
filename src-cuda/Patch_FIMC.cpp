@@ -8,7 +8,6 @@
 #include "GlobalSolverKernels.hpp"
 #include "OptimizedLocalSolver.hpp"
 
-#include <chrono>
 namespace Eikonal {
 
     template<int MESH_SIZE>
@@ -44,7 +43,9 @@ namespace Eikonal {
         idx_t objval;
 
         // Call metis lib
-        METIS_PartMeshNodal(&ne, &nn, eptr.data(), eidx.data(), nullptr, nullptr, &np, nullptr, nullptr, &objval, epart.data(), npart.data());
+        METIS_PartMeshNodal(&ne, &nn, eptr.data(), eidx.data(),
+                            nullptr, nullptr, &np, nullptr, nullptr, &objval,
+                            epart.data(), npart.data());
 
         // ********************************************************************************************** //
 
@@ -105,9 +106,9 @@ namespace Eikonal {
 
         // vector for cross-checking adjacency
         std::vector<std::vector<bool>> adjacentPatchChecks(npatch);
-        for(std::vector<bool> &t : adjacentPatchChecks) {
+        for (std::vector<bool> &t: adjacentPatchChecks) {
             t.resize(npatch);
-            std::fill(t.begin(), t.end(),false);
+            std::fill(t.begin(), t.end(), false);
         }
 
         // support vector for count patch-belonging nodes
@@ -130,31 +131,31 @@ namespace Eikonal {
                 // if element has a face completely in the same patch, then that patch is the "reference" one
                 if (counter[i] == (MESH_SIZE - 1)) {
                     refPatch = i;
-                }else if(counter[i] > 0){
+                } else if (counter[i] > 0) {
                     // In case a "reference" patch exists, then only one point will be part of another patch
                     adjPatch = i;
                 }
             }
 
             // sign cross-check if reference exists
-            if(refPatch>0) {
+            if (refPatch > 0) {
                 adjacentPatchChecks[refPatch][adjPatch] = true;
                 adjacentPatchChecks[adjPatch][refPatch] = true;
             }
         }
 
         // for each patch count adjacent patches
-        adjPatchPtr.resize(npatch+1);
-        for(int i=0; i<npatch; ++i){
+        adjPatchPtr.resize(npatch + 1);
+        for (int i = 0; i < npatch; ++i) {
             int count = 0;
-            for(int j=0; j<npatch; ++j)
-                if(adjacentPatchChecks[i][j]) count++;
-            adjPatchPtr[i+1] = count;
+            for (int j = 0; j < npatch; ++j)
+                if (adjacentPatchChecks[i][j]) count++;
+            adjPatchPtr[i + 1] = count;
         }
 
         // create patch to patch adjacent pointer list
-        for(int i=0; i<npatch; ++i)
-            adjPatchPtr[i+1] += adjPatchPtr[i];
+        for (int i = 0; i < npatch; ++i)
+            adjPatchPtr[i + 1] += adjPatchPtr[i];
 
         std::vector<int> tempAdjIdxCount(npatch + 1);
         std::copy(adjPatchPtr.begin(), adjPatchPtr.end(), tempAdjIdxCount.data());
@@ -162,8 +163,8 @@ namespace Eikonal {
         // Create patch-element adjacent index list
         patchAdjacentPatchList.resize(adjPatchPtr[npatch]);
         for (int i = 0; i < npatch; ++i) {
-            for(int j = 0; j < npatch; ++j)
-                if(adjacentPatchChecks[i][j]){
+            for (int j = 0; j < npatch; ++j)
+                if (adjacentPatchChecks[i][j]) {
                     patchAdjacentPatchList[tempAdjIdxCount[i]] = j;
                     tempAdjIdxCount[i]++;
                 }
@@ -174,14 +175,14 @@ namespace Eikonal {
 
         startingPatches.clear();
         std::vector<bool> tActive(npatch, false);
-        for(int i=0; i<startingPoint.size(); ++i){
+        for (int i = 0; i < startingPoint.size(); ++i) {
             int nodeId = startingPoint[i];
             int patchId = npart[nodeId];
             tActive[patchId] = true;
         }
 
-        for(int i=0; i<tActive.size(); ++i)
-            if(tActive[i])
+        for (int i = 0; i < tActive.size(); ++i)
+            if (tActive[i])
                 startingPatches.push_back(i);
 
         // ************************************************************************************** //
@@ -209,22 +210,25 @@ namespace Eikonal {
 
         int nPatches = (n_elements + patchSize) / patchSize;
 
-        std::cout << "N_PATCHES: "<< nPatches << std::endl;
+        nPatches += (nPatches == 1) ? 1 : 0;
 
-        partitionMesh<MESH_SIZE>(nPatches, data, X, adjPatchPatchPtr, patchAdjPatchIdx, adjPatchElePtr, patchAdjEleIdx, adjPatchNodePtr, patchAdjNodeIdx, XPatches);
+        std::cout << "N_PATCHES: " << nPatches << std::endl;
+
+        partitionMesh<MESH_SIZE>(nPatches, data, X, adjPatchPatchPtr, patchAdjPatchIdx, adjPatchElePtr, patchAdjEleIdx,
+                                 adjPatchNodePtr, patchAdjNodeIdx, XPatches);
 
         U.resize(n_nodes);
 
-        std::fill(U.begin(), U.end(),MAXF);
+        std::fill(U.begin(), U.end(), MAXF);
 
-        for(const int &ptId : X){
+        for (const int &ptId: X) {
             U[ptId] = 0;
         }
 
         //Extract max adjElement for node
         int maxRange = 0;
-        for(int i=0; i<data.adjPointPtr.size()-1; ++i){
-            int range = data.adjPointPtr[i+1] - data.adjPointPtr[i];
+        for (int i = 0; i < data.adjPointPtr.size() - 1; ++i) {
+            int range = data.adjPointPtr[i + 1] - data.adjPointPtr[i];
             if (range > maxRange) maxRange = range;
         }
 
@@ -245,15 +249,15 @@ namespace Eikonal {
 
         int p = 0;
 
-        for(int j=0; j<n_elements; ++j){
+        for (int j = 0; j < n_elements; ++j) {
 
             int eleId = patchAdjEleIdx[j];
             int pointRangeStart = data.adjElementPtr[eleId];
             int pointRangeEnd = data.adjElementPtr[eleId + 1];
 
-            for(int k = pointRangeStart; k < pointRangeEnd; ++k){
+            for (int k = pointRangeStart; k < pointRangeEnd; ++k) {
                 int ptId = data.elementAdjacentPointList[k];
-                points[k-pointRangeStart] = data.points[ptId];
+                points[k - pointRangeStart] = data.points[ptId];
 
 
                 int count = temp_counters[ptId];
@@ -263,7 +267,7 @@ namespace Eikonal {
                 temp_counters[ptId] = count;
             }
 
-            MPrimeMatrixPerPatch[j] = OptimizedLocalSolver<MESH_SIZE>(0,0,M,points).getMprimeMatrix();
+            MPrimeMatrixPerPatch[j] = OptimizedLocalSolver<MESH_SIZE>(0, 0, M, points).getMprimeMatrix();
         }
         auto end = std::chrono::high_resolution_clock::now();
         this->prepare = std::chrono::duration_cast<std::chrono::nanoseconds>(end - start).count();
@@ -272,15 +276,15 @@ namespace Eikonal {
 
         start = std::chrono::high_resolution_clock::now();
         globalSolve<MESH_SIZE>(XPatches,
-                    adjPatchElePtr, patchAdjEleIdx,
-                    adjPatchNodePtr, patchAdjNodeIdx,
-                    data.adjElementPtr, data.elementAdjacentPointList,
-                    adjPatchPatchPtr, patchAdjPatchIdx,
-                    U, MPrimeMatrixPerPatch,
-                    time_pointers_ids, maxRange, &result);
+                               adjPatchElePtr, patchAdjEleIdx,
+                               adjPatchNodePtr, patchAdjNodeIdx,
+                               data.adjElementPtr, data.elementAdjacentPointList,
+                               adjPatchPatchPtr, patchAdjPatchIdx,
+                               U, MPrimeMatrixPerPatch,
+                               time_pointers_ids, maxRange, &result);
         end = std::chrono::high_resolution_clock::now();
         this->compute = std::chrono::duration_cast<std::chrono::nanoseconds>(end - start).count();
-        
+
 
         return result;
     }

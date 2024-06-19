@@ -3,7 +3,6 @@
 #include "iostream"
 #include <thrust/device_ptr.h>
 #include <thrust/scan.h>
-#include <thrust/execution_policy.h>
 
 namespace Eikonal {
 
@@ -537,9 +536,6 @@ namespace Eikonal {
 
         int n_blocks = (n_patches + block_size) / block_size;
 
-        timespec start{}, end{};
-        clock_gettime(CLOCK_MONOTONIC, &start);
-
         while (activeListSize > 0) {
 
             // UPDATE ACTIVE PATCH
@@ -609,12 +605,6 @@ namespace Eikonal {
 
         // GET FINAL VALUES
         cudaMemcpy(U.data(), U_dev, sizeof(double) * U.size(), cudaMemcpyDeviceToHost);
-
-        clock_gettime(CLOCK_MONOTONIC, &end);
-
-        auto elapsed = static_cast<double>((end.tv_sec - start.tv_sec));
-        elapsed += static_cast<double>((end.tv_nsec - start.tv_nsec)) / 1000000000.0;
-        std::cout << "pure computational time: " << elapsed << std::endl;
 
         // FREE ALL CUDA MEMORY
         {
@@ -765,7 +755,7 @@ namespace Eikonal {
                 //checkError("B");
             }
 
-            // ACTIVATE NEIGHBOURS OF CONVERGED PATCHES (MIXED)
+            // ACTIVATE NEIGHBOURS OF CONVERGED PATCHES (GPU)
             {
                 cudaMemset(converged_patch_list_new_dev, 0, sizeof(int) * n_patches);
                 //checkError("O");
@@ -798,7 +788,7 @@ namespace Eikonal {
                 //checkError("G");
             }
 
-            //RETRIEVE ACTIVE LIST (CPU)
+            //RETRIEVE ACTIVE LIST (gpU)
             {
                 /* */
                 //checkError("H");

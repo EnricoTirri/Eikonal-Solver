@@ -9,7 +9,7 @@ namespace Eikonal{
 
     template<int MESH_SIZE>
     inline double OptimizedLocalSolver<MESH_SIZE>::operator()(const int &pointref, const std::array<double, MESH_SIZE>& valin) {
-
+        //very similar to LocalSolver, but we are using the precomputed MprimeMatrix
         MprimeMatrix M;
         std::array<double, MESH_SIZE> valout;
         getMprimeMatrix(pointref, valin, M, valout);

@@ -27,15 +27,19 @@ namespace Eikonal {
                 double la = l1 * M(0) + l2 * M(1) + M(2);
                 double lb = l1 * M(1) + l2 * M(3) + M(4);
                 R << -t13 * dist + la, -t23 * dist + lb;
+                //find the Jacobian
                 Jacobian J;
                 J.row(0) << M(0) - t13 * la / dist,
                         M(1) - t13 * lb / dist;
                 J.row(1) << M(1) - t23 * la / dist,
                         M(3) - t23 * lb / dist;
+                // get the inverse
                 J = J.inverse().eval();
+                // get the direction by multiplying the inverse Jacobian with the residual
                 Vector dir = -J * R;
                 l1 += dir(0);
                 l2 += dir(1);
+                //if we are out of bounds, we need to project back to one of the faces
                 if (l1 <= 0) {
                     l1 = 0;
                     if (l2 <= 0) {

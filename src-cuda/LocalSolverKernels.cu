@@ -18,6 +18,7 @@ namespace Eikonal {
         double b = 1;
         double fa = f(a);
         double fb = f(b);
+        //if function do not change sign the best solution is one of the extremes
         if (sameSign(fa, fb)) {
             if (std::abs(fa) < std::abs(fb))
                 return 0;
@@ -30,6 +31,7 @@ namespace Eikonal {
         do {
             k = (a + b) / 2;
             res = f(k);
+            //if the new boundary does not cross the x-axis, we must update the boundary
             if (sameSign(fa, res)) {
                 a = k;
                 fa = res;
@@ -37,6 +39,7 @@ namespace Eikonal {
                 b = k;
             }
             iters--;
+            //if the residual is less than the tolerance, we can stop
         } while (std::abs(res) > tol && iters != 0);
         return k;
     }
@@ -108,10 +111,11 @@ namespace Eikonal {
     __device__ double solveLocal<3>(const int &pointref, const MprimeMatrix<3> &MT, double *valin) {
         TTraits<3>::MprimeMatrix M;
         double valout[3];
-
+        // get Mprime matrix and rotated values
         getMprimeMatrix3(pointref, MT, valin, M, valout);
 
         double t12 = valout[1] - valout[0];
+        //find lambda1 that minimizes the distance
         double l1 = constraintBisection(M(0), M(2), M(1), t12, 2, 10e-6);
         return -t12 * l1 + valout[1] + distance3(l1, M);
     }
@@ -201,17 +205,19 @@ namespace Eikonal {
             double la = l1 * M(0) + l2 * M(2) + M(5);
             double lb = l1 * M(2) + l2 * M(1) + M(4);
             R << -t13 * dist + la, -t23 * dist + lb;
+            //calculate the jacobian matrix
             Jacobian J;
             J.row(0) << M(1) - t23 * lb / dist,
                         -(M(2) - t13 * lb / dist);
             J.row(1) << -(M(2) - t23 * la / dist),
                     M(0) - t13 * la / dist,
-
+            //calculate the inverse of the jacobian matrix
             J /= (J(0,0)*J(1,1) - J(0,1) * J(1,0));
-
+            //follow the direction of the gradient to minimize the distance
             Vector dir = -J * R;
             l1 += dir(0);
             l2 += dir(1);
+            //if the new lambdas are out of bounds, the best solution is in one of the faces
             if (l1 <= 0) {
                 l1 = 0;
                 if (l2 <= 0) {

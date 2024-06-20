@@ -41,7 +41,7 @@ namespace Eikonal {
         }
 
         // Initialize minHeap
-        U.reserve(data.points.size());
+        U.resize(data.points.size());
         std::priority_queue<int, std::vector<int>, EikonalHeapComparator> minHeap((EikonalHeapComparator(U)));
         std::fill(U.begin(), U.end(), MAXF);
         for (const auto &i: X) {
@@ -108,7 +108,7 @@ namespace Eikonal {
             }
 
 
-#pragma omp parallel for schedule(static) num_threads(N_THREADS)
+#pragma omp parallel for
             for (auto & activepoint : activepoints) {
                 const auto pointID = activepoint.punto;
                 for (int elID : activepoint.elements_legacy) {

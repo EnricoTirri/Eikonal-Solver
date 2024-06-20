@@ -53,7 +53,6 @@ int main(int argc, char *argv[]) {
     std::vector<double> elementData;
     std::vector<double> U;
     std::vector<int> X;
-    timespec start{}, end{};
     auto prepare =0.0;
     auto compute = 0.0;
 

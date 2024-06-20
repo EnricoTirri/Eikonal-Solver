@@ -11,44 +11,9 @@ Project developed by:
 - [Enrico Tirri](https://github.com/EnricoTirri)
 - [Santoro Dario](https://github.com/DarioSantoroDS)
 
-### Problem Specifications
+### Problem description, Implementation decisions and Result analysis
 
-The Eikonal equation is a non-linear first-order partial differential equation that is encountered in problems of wave propagation or in Hamiltonian system. It may be used to computer the continuos shortest path (geodesic) between points, electromagnetic potential, the arrival time of an acoustic wave, etc.
-
-In most generic term, the problem is:
-
-Find $u$ that satisfies:
-
-$$
-\begin{cases}
-H(x, \nabla u(x)) = 1 & \quad x \in \Omega \subset \mathbb{R}^d \\  
-u(x) = g(x) & \quad x \in \Gamma \subset \partial\Omega
-\end{cases}
-$$
-
-where:
-- $d$ is the dimension of the physical space
-- $u : \mathbb{R}^d \to \mathbb{R}$, returns for each point of the space the travel time associated
-- $H$ is an Hamiltonian operator
-- $g$ is a smooth function
-- $\Omega$ is the problem domain
-- $\Gamma$ is a sub set the the boundaries of the domain
-
-On most cases we have:
-$$H(x, \nabla u(x)) = |\nabla u(x)|_{M} = \sqrt{(\nabla u(x))^{T} M(x) \nabla u(x)}$$
-
-where M is a symmetric positive definite function.
-
-In the simplest cases $M = c^2I$, so the problem reads simply:
-
-$$
-\begin{cases}
-\left|\nabla u(x)\right| = 1/c & \quad x \in \Omega\\
-u(x) = g(x) & \quad x\in \Gamma \subset \partial\Omega
-\end{cases}
-$$
-
-where $c$ represents the celerity of the wave.
+Can be found into report - `documents/Report.pdf`
 
 ### File Structure
 
@@ -59,10 +24,19 @@ where $c$ represents the celerity of the wave.
     * `EikonalSolver.hpp` - defines Eikonal global problem solver
     * `EikonalTraits.hpp` - defines some Data Structure for Eikonal problem traits
     * `LocalSolver.hpp` - defines Eikonal local problem solver
+    * `OptimizedLocalSolver.hpp` - defines Eikonal Optimized local problem solver
+    * `EikonalMath.hpp` - defines common mathematical method implementations
 
+* `include-cuda` - headers files for cuda implemented function wrapping
+  * `GlobalSolverKernel.hpp` - defines function wrappers for global solver functions
+  * `LocalSolverKernel.hpp` - defines function wrappers for local solver functions
 
-* `src` - source file of headers implementation
-
+* `src` - source files of headers implementation
+* `src-cuda` - source files of cuda function implementation
+* `testfiles_torus_tetra` - collection of .vtk file containing tetrahedrical test mesh
+* `testfiles_torus_tri` - collection of .vtk file containing triangular test mesh
+* `showcase` - collection of reference results images
+* `documents` - collection of reference papers and implementation report
 
 ### How to build
 
@@ -83,17 +57,26 @@ $ make
 * ` -D USECUDA=(1 or 0)` - specify if you want to compile the cuda target
 * `-D CMAKE_CUDA_COMPILER=` - if you want compile the cuda target it's best to specify the nvcc path, if cuda toolkit is alredy in path it's should not be neccesary
 * `-D IO_VERBOSE=true/false` - specify if you want to enable verbose option for vtk file reading and writing
-* `-D METIS_LIB='path/to/metis.so` - specify path to metis shared object
+* `-D METIS_LIB='path/to/metis.so'` - specify path to metis shared object
+* `-D MAKETEST=(1 or 0)` - specify if compile alternative test targets 
 
-outpute executable will be:
+output executables will be:
 * `eikonal_solver_FMM` - Fast Marching Method
 * `eikonal_solver_FIMP` - Fast Iterative Parallel Method
-* `eikonal_solver_FMMO` - Fast Marching Optimized with Ganellari solver
+* `eikonal_solver_FMMO` - Fast Marching Method with Optimized Local solver
 * `eikonal_solver_FIM` - Fast Iterative Method
 * `eikonal_solver_PFIM` - Patch Fast Iterative Method
 * `eikonal_solver_PFIMC` - Patch Fast Iterative Method on GPU
 
-### How to run
+if MAKETEST=1 the output executables will be
+* `eikonal_test_FMM` - Fast Marching Method tester
+* `eikonal_test_FIMP` - Fast Iterative Parallel Method tester
+* `eikonal_test_FMMO` - Fast Marching Method with Optimized Local Solver tester
+* `eikonal_test_FIM` - Fast Iterative Method tester
+* `eikonal_test_PFIM` - Patch Fast Iterative Method tester
+* `eikonal_test_PFIMC` - Patch Fast Iterative Method on GPU tester
+
+### How to run solver
 
 ```bash
 $ ./eikonal_solver_* input.vtk output.vtk meshdim id1 [id2 ...]
@@ -106,6 +89,17 @@ where:
     be careful .vtk file to be appropriately formatted**
 * `id1` - the .vtk point index of wave starting point [$u(id_1) = 0$]
 * `[id2 ...]` - optional list of other starting points
+
+### How to run tester
+```bash
+$ ./eikonal_test_* input_dir_path output.csv meshdim
+```
+where:
+* `input_dir_path` - is a path to a dir containing **only** ASCII formatted .vtk input mesh files
+* `output.csv` - is the path/filename where output (test result) will be placed
+* `meshdim` - is the mesh size (3=triangular mesh, 4=tetrahedral mesh)
+  * **physical dimension is assumed to be always 3,\
+    be careful .vtk file to be appropriately formatted**
 
 ### Examples showcase 
 ##### Triangular Mesh

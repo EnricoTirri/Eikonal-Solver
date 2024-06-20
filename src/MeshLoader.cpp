@@ -125,7 +125,6 @@ namespace Eikonal {
         cout.flush();
 #endif
 
-//
         for (const auto &point: mesh.points) {
             std::array<double, 3> temp = {0, 0, 0};
             for (int i = 0; i < 3; ++i)
@@ -138,7 +137,7 @@ namespace Eikonal {
         cout << "[DUMP]: starting dumping mesh elements_legacy ... ";
         cout.flush();
 #endif
-//
+
         std::vector<std::vector<int>> cells;
         for (int i=0; i<mesh.adjElementPtr.size()-1; ++i) {
             std::vector<int> t_cell;
@@ -161,13 +160,6 @@ namespace Eikonal {
             temp.emplace_back(vals);
             points_value.emplace_back(temp);
         }
-//        for (const auto &pair: mesh.adjPointPtr) {
-//            if (pointsData.contains(pair.first)) {
-//                std::vector<double> c_temp;
-//                c_temp.emplace_back(pointsData.at(pair.first));
-//                points_value.emplace_back(c_temp);
-//            }
-//        }
 
 #ifdef MSHLOADER_VERBOSE
         cout << "end" << endl;

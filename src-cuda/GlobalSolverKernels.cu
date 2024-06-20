@@ -31,11 +31,10 @@ namespace Eikonal {
     __global__ void
     activateNeighbours(int *patchPatchPtr, int *patchAdjPatchIdx, int *converged_patch_list,
                        int *converged_patch_list_new, int n_patches) {
+
         int blockSize = blockDim.x * blockDim.y;
         int blockId = blockIdx.y * gridDim.x + blockIdx.x;
-
         int threadId = threadIdx.y * blockDim.x + threadIdx.x;
-
         int id = blockId * blockSize + threadId;
 
         if (id < n_patches) {
@@ -47,50 +46,6 @@ namespace Eikonal {
                     converged_patch_list_new[patchAdjPatchIdx[i]] = 1;
                 }
             }
-        }
-    }
-
-    __global__ void
-    scanAndPack(int *converged_activePatchList, int *activePatchList, int *activePatchList_size, int n_patches) {
-        int threadId = threadIdx.y * blockDim.x + threadIdx.x;
-
-        if (threadId < n_patches) {
-            //PARALLEL SCAN FOR ACTIVE LIST PACK INDICES
-
-            int stride = 1;
-            for (; stride < n_patches; stride *= 2) {
-                int step = 2 * stride;
-
-                int k = step - 1 + threadId * step;
-                if (k < n_patches) {
-                    converged_activePatchList[k] += converged_activePatchList[k - stride];
-                }
-
-                __syncthreads();
-            }
-
-            stride = stride / 2;
-
-            for (; stride > 1; stride /= 2) {
-                int step = stride / 2;
-
-                int k = stride - 1 + threadId * stride;
-                if (k < n_patches - step) {
-                    converged_activePatchList[k + step] += converged_activePatchList[k];
-                }
-
-                __syncthreads();
-            }
-
-
-            if (converged_activePatchList[threadId] > 0) {
-                if (threadId == 0 || converged_activePatchList[threadId - 1] < converged_activePatchList[threadId]) {
-                    activePatchList[converged_activePatchList[threadId] - 1] = threadId;
-                }
-            }
-
-            if (threadId == 0)
-                *activePatchList_size = converged_activePatchList[n_patches - 1];
         }
     }
 
@@ -541,7 +496,6 @@ namespace Eikonal {
             // UPDATE ACTIVE PATCH
             {
                 cudaMemset(converged_patch_list_dev, 0, sizeof(int) * n_patches);
-                //checkError("A");
                 updatePatchValues3<<<activeListSize, block_size>>>(U_dev, MprimeList_dev, 7,
                                                                    activePatchList_dev, activePatchListSize_dev,
                                                                    patchElementPtr_dev, patchAdjElementIdx_dev,
@@ -550,7 +504,6 @@ namespace Eikonal {
                                                                    time_reduction_list_dev, time_reduction_ptr_dev,
                                                                    reduction_span, converged_patch_list_dev);
 
-                //checkError("B");
             }
 
             // ACTIVATE NEIGHBOURS OF CONVERGED PATCHES (MIXED)
@@ -565,9 +518,6 @@ namespace Eikonal {
 
                 activeListSize = reduceActiveList(converged_patch_list_new_dev, activePatchList_dev,
                                                   activePatchListSize_dev, n_patches);
-
-                //checkError("D");
-                //checkError("E");
             }
 
 
@@ -576,7 +526,6 @@ namespace Eikonal {
             //DO ONE ITERATION ON NEIGHBOURS
             {
                 cudaMemset(converged_patch_list_dev, 0, sizeof(int) * n_patches);
-                //checkError("F");
 
                 updatePatchValues3<<<activeListSize, block_size>>>(U_dev, MprimeList_dev, 1,
                                                                    activePatchList_dev, activePatchListSize_dev,
@@ -585,20 +534,12 @@ namespace Eikonal {
                                                                    elementNodePtr_dev, elementAdjNodeIdx_dev,
                                                                    time_reduction_list_dev, time_reduction_ptr_dev,
                                                                    reduction_span, converged_patch_list_dev);
-                //checkError("G");
             }
 
             //RETRIEVE ACTIVE LIST (CPU)
             {
-
-                //checkError("H");
-
-
                 activeListSize = reduceActiveList(converged_patch_list_dev, activePatchList_dev,
                                                   activePatchListSize_dev, n_patches);
-
-                //checkError("I");
-                //checkError("L");
             }
 
         }
@@ -743,7 +684,6 @@ namespace Eikonal {
             // UPDATE ACTIVE PATCH
             {
                 cudaMemset(converged_patch_list_dev, 0, sizeof(int) * n_patches);
-                //checkError("A");
                 updatePatchValues4<<<activeListSize, block_size>>>(U_dev, MprimeList_dev, 7,
                                                                    activePatchList_dev, activePatchListSize_dev,
                                                                    patchElementPtr_dev, patchAdjElementIdx_dev,
@@ -752,22 +692,18 @@ namespace Eikonal {
                                                                    time_reduction_list_dev, time_reduction_ptr_dev,
                                                                    reduction_span, converged_patch_list_dev);
 
-                //checkError("B");
             }
 
             // ACTIVATE NEIGHBOURS OF CONVERGED PATCHES (GPU)
             {
                 cudaMemset(converged_patch_list_new_dev, 0, sizeof(int) * n_patches);
-                //checkError("O");
                 activateNeighbours<<<n_blocks, block_size>>>(patchPatchPtr_dev, patchAdjPatchIdx_dev,
                                                              converged_patch_list_dev, converged_patch_list_new_dev,
                                                              n_patches);
-                //checkError("ACT");
-                //checkError("BIG");
+
                 activeListSize = reduceActiveList(converged_patch_list_new_dev, activePatchList_dev,
                                                   activePatchListSize_dev, n_patches);
 
-                //checkError("E");
             }
 
 
@@ -776,7 +712,6 @@ namespace Eikonal {
             //DO ONE ITERATION ON NEIGHBOURS
             {
                 cudaMemset(converged_patch_list_dev, 0, sizeof(int) * n_patches);
-                //checkError("F");
 
                 updatePatchValues4<<<activeListSize, block_size>>>(U_dev, MprimeList_dev, 1,
                                                                    activePatchList_dev, activePatchListSize_dev,
@@ -785,17 +720,12 @@ namespace Eikonal {
                                                                    elementNodePtr_dev, elementAdjNodeIdx_dev,
                                                                    time_reduction_list_dev, time_reduction_ptr_dev,
                                                                    reduction_span, converged_patch_list_dev);
-                //checkError("G");
             }
 
             //RETRIEVE ACTIVE LIST (gpU)
             {
-                /* */
-                //checkError("H");
                 activeListSize = reduceActiveList(converged_patch_list_dev, activePatchList_dev,
                                                   activePatchListSize_dev, n_patches);
-                //checkError("I");
-                //checkError("L");
             }
 
         }

@@ -7,6 +7,7 @@
 #include "EikonalHeapComparator.cpp"
 #include "LocalSolver.hpp"
 #include <chrono>
+
 namespace Eikonal {
     template<int MESH_SIZE>
     void EikonalSolver<MESH_SIZE>::print_spec() {

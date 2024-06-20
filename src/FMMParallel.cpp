@@ -79,7 +79,7 @@ namespace Eikonal {
             for (size_t index1 = 0; index1 < neighbors.size(); ++index1) {
                 int elID = neighbors[index1];
                 int pntRangeStart = data.adjElementPtr[elID];
-//build a data structure to avoid atomic operations
+                //build a data structure to avoid atomic operations
                 for (size_t index2 = 0; index2 < MESH_SIZE; ++index2) {
                     int pointID = data.elementAdjacentPointList[pntRangeStart + index2];
 

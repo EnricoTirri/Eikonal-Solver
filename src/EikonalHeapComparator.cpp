@@ -1,6 +1,8 @@
 
 #include <vector>
 
+// This class defines the operator used by Min Heap data structure
+// to compare values 
 class EikonalHeapComparator {
     std::vector<double> &U;
 

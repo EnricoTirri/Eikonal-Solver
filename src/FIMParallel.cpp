@@ -36,7 +36,7 @@ namespace Eikonal {
                 U[pId] = 0;
                 int elRS = data.adjPointPtr[pId];
                 int elRE = data.adjPointPtr[pId + 1];
-//#pragma omp parallel for
+
                 for (int j = elRS; j < elRE; ++j) {
                     int eId = data.pointAdjacentElementList[j];
                     int pRS = data.adjElementPtr[eId];
@@ -84,52 +84,60 @@ namespace Eikonal {
             }
     }
 
+
+    // This method obtain the new value of an agglomerate, iterating on all elements the agglomerate center is connected to
     template<int MESH_SIZE>
     inline void
     updateAgglomerate(const int &agglID, std::vector<double> &newValues, const std::vector<double> &U, const Mesh<MESH_SIZE> &data, const int &iter) {
         int v = agglID;
 
+        // get all elements agglomerate center is connected to
         int elRangeStart = data.adjPointPtr[v];
         int elRangeEnd = data.adjPointPtr[v + 1];
 
+        // prepare reduction list
         newValues.resize(elRangeEnd - elRangeStart);
 
+        // iterate over elements
+        for (int i = elRangeStart; i < elRangeEnd; i++) {
 
-            for (int i = elRangeStart; i < elRangeEnd; i++) {
+            int elID = data.pointAdjacentElementList[i];
 
-                int elID = data.pointAdjacentElementList[i];
+            int pntRangeStart = data.adjElementPtr[elID];
 
-                int pntRangeStart = data.adjElementPtr[elID];
-
-                std::array<Point, MESH_SIZE> base;
-                int k = 0;
-                std::array<double, MESH_SIZE> values;
-                for (int j = 0; j < MESH_SIZE; j++) {
-                    int tpId = data.elementAdjacentPointList[pntRangeStart + j];
-                    if (tpId != v) {
-                        base[k] = data.points[tpId];
-                        values[k] = U[tpId];
-                        k++;
-                    }
-                }
-                base[MESH_SIZE - 1] = data.points[v];
-
-                Traits::VelocityM M;
-                M << 1.0, 0.0, 0.0,
-                        0.0, 1.0, 0.0,
-                        0.0, 0.0, 1.0;
-
-                LocalSolver<MESH_SIZE> solver(M, base, values, iter, 10e-9);
-                double sol = solver();
-                newValues[i - elRangeStart] = sol;
-            }
-
-            for (int step = 1; step < newValues.size(); step *= 2) {
-                for (int j = 0; j < newValues.size() - step; j += step) {
-                    if (newValues[j] > newValues[j + step])
-                        newValues[j] = newValues[j + step];
+            // get solution
+            std::array<Point, MESH_SIZE> base;
+            int k = 0;
+            std::array<double, MESH_SIZE> values;
+            for (int j = 0; j < MESH_SIZE; j++) {
+                int tpId = data.elementAdjacentPointList[pntRangeStart + j];
+                if (tpId != v) {
+                    base[k] = data.points[tpId];
+                    values[k] = U[tpId];
+                    k++;
                 }
             }
+            base[MESH_SIZE - 1] = data.points[v];
+
+            Traits::VelocityM M;
+            M << 1.0, 0.0, 0.0,
+                    0.0, 1.0, 0.0,
+                    0.0, 0.0, 1.0;
+
+            LocalSolver<MESH_SIZE> solver(M, base, values, iter, 10e-9);
+            double sol = solver();
+
+            // store solution
+            newValues[i - elRangeStart] = sol;
+        }
+
+        // apply reduction on computed solutions
+        for (int step = 1; step < newValues.size(); step *= 2) {
+            for (int j = 0; j < newValues.size() - step; j += step) {
+                if (newValues[j] > newValues[j + step])
+                    newValues[j] = newValues[j + step];
+            }
+        }
 
     }
 
@@ -270,7 +278,6 @@ namespace Eikonal {
             applyScanAndPack(active, reducedActive);
             // ----------------------------------------------------------- //
 
-//#pragma omp barrier
 
             }
         }

@@ -38,6 +38,19 @@ Can be found into report - `documents/Report.pdf`
 * `showcase` - collection of reference results images
 * `documents` - collection of reference papers and implementation report
 
+### Build dependencies
+
+In order to build all targets the following software libraries must be installed:
+
+* `OpenMP` - [Reference site](https://www.openmp.org/) - tested version: 17.0.x
+* `Eigen` - [Reference site](https://eigen.tuxfamily.org/index.php?title=Main_Page) - tested version: 3.4.x
+* `Metis` - [Reference site](https://github.com/KarypisLab/METIS) - tested version: 5.2.x
+
+In order to build cuda targets version the following libraris must be installed:
+* `Cuda` - [Reference site](https://developer.nvidia.com/cuda-toolkit) - tested version: 11.7.x
+
+Since installing methods can variate between linux distribution we do not provide any installation tutorial for the above libraries.
+
 ### How to build
 
 In order to build the executable, from the root folder run the following commands:

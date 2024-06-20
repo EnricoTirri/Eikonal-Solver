@@ -51,6 +51,7 @@ namespace Eikonal {
         double b = 1;
         double fa = f(a);
         double fb = f(b);
+        //if the interval does not itersect the zero, return the closest point
         if (sameSign(fa, fb)) {
             if (std::abs(fa) < std::abs(fb))
                 return 0;

@@ -77,7 +77,7 @@ $ make
 `_FLAGS_` are optional, they can be:
 * `-D EIGEN_PATH='/path/to/eigen3'` - specify eigen3 library path
 * `-D OMP_NUM_THREADS=_num_threads_` - specify the number of threads used by omp implementation
-* `-D VERBOSE=true/false` - specify if you want to enable all verbose option
+* `-D VERBOSE=true/false` - specify if you want to enable all verbose options
 * `-D SOLVER_VERBOSE=true/false` - specify if show local solver work-messages
 * `-D EXE_NAME='_exe_filename_'` - specify the executable filename (default = eikonal_solver_'method_tag')
 * ` -D USECUDA=(1 or 0)` - specify if you want to compile the cuda target

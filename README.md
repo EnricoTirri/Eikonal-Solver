@@ -77,15 +77,21 @@ $ make
 `_FLAGS_` are optional, they can be:
 * `-D EIGEN_PATH='/path/to/eigen3'` - specify eigen3 library path
 * `-D OMP_NUM_THREADS=_num_threads_` - specify the number of threads used by omp implementation
-* `-D VERBOSE=true/false` - specify if show vtk parser and mesh loader work-messages
+* `-D VERBOSE=true/false` - specify if you want to enable all verbose options
 * `-D SOLVER_VERBOSE=true/false` - specify if show local solver work-messages
-* `-D METHOD=_METHOD_TAG_` - specify the solver method that has to be compiled (default = FMM)
 * `-D EXE_NAME='_exe_filename_'` - specify the executable filename (default = eikonal_solver_'method_tag')
+* ` -D USECUDA=(1 or 0)` - specify if you want to compile the cuda target
+* `-D CMAKE_CUDA_COMPILER=` - if you want compile the cuda target it's best to specify the nvcc path, if cuda toolkit is alredy in path it's should not be neccesary
+* `-D IO_VERBOSE=true/false` - specify if you want to enable verbose option for vtk file reading and writing
+* `-D METIS_LIB='path/to/metis.so` - specify path to metis shared object
 
-`_METHOD_TAG_` are:
-* `FMM` - Fast Marching Method
-* `FMMP` - Fast Marching Omp-Parallel Method
-* `FMMP2` - Fast Marching Omp-Parallel Method V2
+outpute executable will be:
+* `eikonal_solver_FMM` - Fast Marching Method
+* `eikonal_solver_FIMP` - Fast Iterative Parallel Method
+* `eikonal_solver_FMMO` - Fast Marching Optimized with Ganellari solver
+* `eikonal_solver_FIM` - Fast Iterative Method
+* `eikonal_solver_PFIM` - Patch Fast Iterative Method
+* `eikonal_solver_PFIMC` - Patch Fast Iterative Method on GPU
 
 ### How to run
 

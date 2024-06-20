@@ -5,16 +5,23 @@
 
 namespace Eikonal {
 
+    // This class defines the structure of the Eikonal Optimized Local solver
     template<int MESH_SIZE>
     class OptimizedLocalSolver {
+
+        // M' typedef
         using MprimeMatrix = TTraits<MESH_SIZE>::MprimeMatrix;
+
         using MeshPoints = TTraits<MESH_SIZE>::MeshPoints;
 
+        // solver max-iterations and tolerance
         int max_iters;
         double tol;
 
+        // solver minimal-list of M' entries
         MprimeMatrix MT;
 
+        // This method computes the M'-distance for Triangular elements
         inline double distance(const double l1, const MprimeMatrix &M) {
             if constexpr (MESH_SIZE == 3)
                 return std::sqrt(l1 * l1 * M(0) + 2 * l1 * M(2) + M(1));
@@ -22,6 +29,7 @@ namespace Eikonal {
                 return 0;
         }
 
+        // This methods computes the M'-distance for tetrahedral elements
         inline double distance(const double l1, const double l2, const MprimeMatrix &M) {
             if constexpr (MESH_SIZE == 4)
                 return std::sqrt(l1 * l1 * M(0) + l2 * l2 * M(1) + 2 * (l1 * l2 * M(2) + l1 * M(5) + l2 * M(4)) + M(3));
@@ -29,6 +37,7 @@ namespace Eikonal {
                 return 0;
         }
 
+        // This method computes the minimal list of M' entries
         void buildMprimeMatrix(const Traits::VelocityM &V, const MeshPoints &points) {
             Traits::Point E;
             E << points[1] - points[0];
@@ -52,6 +61,7 @@ namespace Eikonal {
             }
         }
 
+        // Helper method to retrieve rotated M' configuration signs
         inline void getSigns(std::array<int, MESH_SIZE - 1> &signs, const int &shift) {
             if constexpr (MESH_SIZE == 3) {
                 int s0 = (24 >> shift) & 7;
@@ -77,10 +87,14 @@ namespace Eikonal {
             }
         }
 
+        // Helper method to retrieve mixed M' entries signs
         inline int esgn(const int &kcode, const int &lcode, const int &scode) {
             return (2 * (scode < kcode) - 1) * (2 * (scode < lcode) - 1);
         }
 
+
+        // This method retrieve the rotated M' configuration with reference to a given ptIdx,
+        // It also reorders the time-values with reference to the new configuration
         inline void
         getMprimeMatrix(const int &ptidx, const std::array<double, MESH_SIZE> &valin, MprimeMatrix &M, std::array<double, MESH_SIZE> &valout) {
             constexpr int RED_SIZE = MESH_SIZE - 1;
@@ -142,6 +156,8 @@ namespace Eikonal {
             return MT;
         }
 
+        // This function performs the local solver with reference to the given pointref,
+        // returns the calculated value into the pointvalues list
         double operator()(const int &pointref, const std::array<double, MESH_SIZE> &pointValues);
     };
 

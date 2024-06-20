@@ -10,6 +10,7 @@ namespace Eikonal {
     template<unsigned int MESH_SIZE>
     using MprimeMatrix = typename TTraits<MESH_SIZE>::MprimeMatrix;
 
+    // CUDA implementation of Local Solver method
     template<unsigned int MESH_SIZE>
     __device__ double solveLocal(const int &pointref, const MprimeMatrix<MESH_SIZE> &MT, double *valin);
 }

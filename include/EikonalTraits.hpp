@@ -5,12 +5,15 @@
 #include <Eigen/Core>
 
 namespace Eikonal {
+
+    // This class defines not-templated traits for eikonal global and local solvers
     class Traits {
     public:
         using Point = Eigen::Matrix<double, 3, 1>;
         using VelocityM = Eigen::Matrix<double, 3, 3>;
     };
 
+    // This class defines templated traits for eikonal global and local solvers
     template<unsigned int MESH_SIZE>
     class TTraits{
     public:
@@ -20,6 +23,8 @@ namespace Eikonal {
 }
 
 namespace std {
+
+    // This struct defines the hash-operator for Eikonal Traits "Point"
     template<>
     struct hash<Eikonal::Traits::Point> {
         size_t operator()(const Eikonal::Traits::Point &k) const {

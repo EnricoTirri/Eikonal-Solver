@@ -9,8 +9,10 @@ namespace Eikonal {
     template<unsigned int MESH_SIZE>
     using MprimeMatrix = typename TTraits<MESH_SIZE>::MprimeMatrix;
 
+    // Defines a method that allocate memory on GPU and copy data from HOST to allocated memory
     void allocateAndTransfer(void **dev_ptr, void *host_ptr, unsigned int type_size, unsigned int elem_number);
 
+    // Wrapper method of CUDA implementation of Eikonal Global Solver
     template<unsigned int MESH_SIZE>
     void globalSolve(const std::vector<int> &XPatches,
                      const std::vector<int> &patchElementPtr, const std::vector<int> &patchAdjElementIdx,

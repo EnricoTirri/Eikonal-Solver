@@ -6,8 +6,11 @@
 #ifdef __AVX2__
 #include "immintrin.h"
 #endif
+
 namespace Eikonal {
 
+    // This class represent the function of eikonal problem along the side of domain:
+    // Lambda_1 + Lambda_2 <= 1,  0 <= Lambda_i <= 1
     class SideFunction {
     private:
         const double a, b, c, dt;
@@ -42,16 +45,15 @@ namespace Eikonal {
     }
 #endif
 
-
-
-
-
+    // This function performs a constrained bisection method on the function f 
     inline double constraintBisection(SideFunction f, const int max_iters, const double tol) {
         double a = 0;
         double b = 1;
         double fa = f(a);
         double fb = f(b);
-        //if the interval does not itersect the zero, return the closest point
+        //if in the interval there is no intersection with zero axis, then
+        //return the minimum value (is minimum value of derivative, so the lower the
+        //value the closest the solution)
         if (sameSign(fa, fb)) {
             if (std::abs(fa) < std::abs(fb))
                 return 0;

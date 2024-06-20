@@ -7,9 +7,12 @@
 #include <array>
 #include <vector>
 
+// This class describe the data structure of a point parsed from .vtk file
 class VtkPoint {
 public:
+    // coordinates of the point
     std::array<double, 3> vec;
+    // data associated to the point
     std::vector<double> data;
 
     VtkPoint(double x, double y, double z) : vec{x, y, z} {}
@@ -26,11 +29,14 @@ public:
     double z() const { return vec[2]; }
 };
 
-
+// This class describe the data structure of a cell parsed from .vtk file
 class VtkCell {
 public:
+    // Type of cell
     int type;
+    // data associated to the cell
     std::vector<double> data;
+    // ids of points the cell is composed by
     std::vector<int> point_ids;
 
     VtkCell() : type(-1) {};
@@ -42,7 +48,8 @@ public:
     }
 };
 
-
+// This class represent the data structure of a .vtk file
+// contains method to read and write .vtk files
 class VtkParser {
 public:
     //status of parsing: 1=successful, 0=not successful
@@ -61,19 +68,24 @@ public:
     //elements_legacy info
     std::vector<VtkCell> cells;
 
+    // This method initialize the class using the provided data
     void loadMesh(const std::vector<std::array<double, 3>> &points,
                   const std::vector<std::vector<int>> &cells,
                   const std::vector<std::vector<double>> &point_data,
                   const std::vector<std::vector<double>> &cell_data);
 
+    // This method reads a .vtk file loading into class data
     void open(std::string const &filename);
 
+    // This method write class data to a .vtk file
     void save(std::string const &filename);
 
 
 private:
+    // This method contains algorithm to read a ASCII formatted .vtk file
     void ascii_parser(std::ifstream &input);
 
+    // This method contains algorithm to write a ASCII formatted .vtk file
     void ascii_saver(std::ofstream &output);
 };
 

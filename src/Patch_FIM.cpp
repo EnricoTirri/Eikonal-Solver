@@ -234,13 +234,17 @@ namespace Eikonal {
                 0.0, 1.0, 0.0,
                 0.0, 0.0, 1.0;
         std::array<Traits::Point, MESH_SIZE> points;
-        for (const int &i: patchAdjEleIdx) {
+        for (int i = 0; i < data.adjElementPtr.size() - 1; ++i)
+        {
             int ptrStart = data.adjElementPtr[i];
             int ptrEnd = data.adjElementPtr[i + 1];
-            for (int j = 0; j < MESH_SIZE; ++j) {
-                points[j] = data.points[data.elementAdjacentPointList[j + ptrStart]];
+
+            for (int j = ptrStart; j < ptrEnd; ++j)
+            {
+                points[j - ptrStart] = data.points[data.elementAdjacentPointList[j]];
             }
-            solvers.push_back(OptimizedLocalSolver<MESH_SIZE>{1, 10e-6, M, points});
+
+            solvers.push_back(OptimizedLocalSolver<MESH_SIZE>{5000, 10e-6, M, points});
         }
 
         // init active list
